@@ -1,0 +1,4 @@
+/m/017dcd	/tv/tv_program/regular_cast./tv/regular_tv_appearance/actor	/m/06v8s0
+/m/06v8s0	/people/person/nationality	/m/09c7w0
+/m/06v8s0	/people/person/profession	/m/0np9r
+
