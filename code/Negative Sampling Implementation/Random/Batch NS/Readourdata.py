@@ -47,11 +47,11 @@ class MetaQADataset(torch_geometric.data.InMemoryDataset):
     def process(self):
         with open(os.path.join(self.raw_dir, 'entities.dict'), 'r') as f:
             lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
-            entities_dict = {key: int(value) for value, key in lines}
+            entities_dict = {key: int(value) for key,value in lines}
 
         with open(os.path.join(self.raw_dir, 'relations.dict'), 'r') as f:
             lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
-            relations_dict = {key: int(value) for value, key in lines}
+            relations_dict = {key: int(value) for key,value in lines}
 
         kwargs = {}
         for split in ['train', 'valid', 'test']:
@@ -75,7 +75,7 @@ class MetaQADataset(torch_geometric.data.InMemoryDataset):
         torch.save((data, slices), self.processed_paths[0])
 
 
-FB15k_dset = MetaQADataset(root='TutorialData')
+FB15k_dset = MetaQADataset(root='/Users/medhaswetasen/Documents/GitHub/Capstone Data/__Parent__/EmbedKGQA/data/MetaQA')
 data = FB15k_dset[0]
 #
 # print(f'The graph has a total of {data.num_entities} entities and {data.num_relations} relations.')
