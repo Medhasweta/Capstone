@@ -4,7 +4,7 @@ import torch
 import torch.optim as optim
 
 from torch_geometric.datasets import FB15k_237
-from torch_geometric.nn import ComplEx, DistMult
+from torch_geometric.nn import ComplEx, DistMult, RotatE # from torch_geometric.datasets import FB15k_237
 
 #%%
 

@@ -3,23 +3,29 @@ import torch
 import torch.optim as optim
 from Readourdata import MetaQADataset
 # from ReadingDatasetUrl import FB15kDataset
-from random_corrupt_complex import ComplEx #, DistMult
+from random_corrupt_complex import ComplEx
+from random_corrupt_distmult import DistMult
+from random_corrupt_rotate import RotatE
 # from torch_geometric.datasets import FB15k_237
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# FB15k_dset = FB15kDataset(root='FB15k')
-FB15k_dset = MetaQADataset(root='/Users/medhaswetasen/Documents/GitHub/Capstone Data/__Parent__/EmbedKGQA/data/MetaQA')
+# FB15k_dset = MetaQADataset(root='packageData')
+FB15k_dset = MetaQADataset(root='MetaQA')
+# FB15k_dset = MetaQADataset(root='fbwq')
 data = FB15k_dset[0].to(device)
 
 model_map = {
 
-    'complex': ComplEx
-#     'distmult': DistMult
+    'complex': ComplEx,
+    'distmult': DistMult,
+    'rotate': RotatE
+
 }
-model_name = 'complex'
+# model_name = 'complex'
 # model_name  = 'distmult'
+model_name = 'rotate'
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--model', choices=model_map.keys(), type=str.lower,
@@ -42,11 +48,13 @@ model_name = 'complex'
 #     **model_arg_map.get(args.model, {}),
 # ).to(device)
 #
-
+model_arg_map = {'rotate': {'margin': 9.0}}
 model = model_map[model_name](
     num_nodes=data.num_entities,
     num_relations=data.num_relations,
-    hidden_channels=50).to(device)
+    hidden_channels=50,
+    **model_arg_map.get(model_name, {}),
+).to(device)
 
 loader = model.loader(
     head_index=data.train_edge_index[0],
@@ -57,8 +65,11 @@ loader = model.loader(
 )
 #
 optimizer_map = {
+
     'complex': optim.Adagrad(model.parameters(), lr=0.001, weight_decay=1e-6),
-    'distmult': optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-6)
+    'distmult': optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-6),
+    'rotate': optim.Adam(model.parameters(), lr=1e-3)
+
 }
 
 optimizer = optimizer_map[model_name]
@@ -80,23 +91,23 @@ def train():
 #
 
 @torch.no_grad()
-def val(vdata):
+def val(data):
     model.eval()
     return model.test(
-        head_index=vdata.valid_edge_index[0],
-        rel_type=vdata.valid_edge_type,
-        tail_index=vdata.valid_edge_index[1],
+        head_index=data.valid_edge_index[0],
+        rel_type=data.valid_edge_type,
+        tail_index=data.valid_edge_index[1],
         batch_size=20000,
         k=10,
     )
 
 @torch.no_grad()
-def testing(tdata):
+def testing(data):
     model.eval()
     return model.test(
-        head_index=tdata.test_edge_index[0],
-        rel_type=tdata.test_edge_type,
-        tail_index=tdata.test_edge_index[1],
+        head_index=data.test_edge_index[0],
+        rel_type=data.test_edge_type,
+        tail_index=data.test_edge_index[1],
         batch_size=20000,
         k=10,
     )
@@ -123,3 +134,17 @@ print(f'Test Mean Rank: {rank:.2f}, Test MRR: {mrr:.4f}, '
 # Hits@k measures the proportion of correct entities that are ranked within the top-k positions by the model. For instance, Hits@1 measures the percentage of times the correct entity is ranked first, Hits@3 measures the percentage of times the correct entity is among the top 3, and so on. This metric is useful for understanding how often the model's predictions are highly accurate. Higher Hits@k values indicate better performance, and it's common to report this metric for various values of k (e.g., 1, 3, 10) to show the model's performance at different levels of ranking precision.
 
 # dimensions
+
+import torch
+import numpy as np
+
+# Assuming 'model' is your trained model instance
+# and it has been moved to 'cpu' for saving purposes
+
+# Extract embeddings from the model
+node_embeddings = model.state_dict()['node_emb.weight'].cpu().numpy()
+relation_embeddings = model.state_dict()['rel_emb.weight'].cpu().numpy()
+
+# Save the embeddings as .npy files
+np.save('E.npy', node_embeddings)
+np.save('R.npy', relation_embeddings)

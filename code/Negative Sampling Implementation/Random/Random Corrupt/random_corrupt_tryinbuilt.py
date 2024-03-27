@@ -5,20 +5,21 @@ import torch.optim as optim
 
 from torch_geometric.datasets import FB15k_237
 from random_corrupt_complex import ComplEx #, DistMult
+from random_corrupt_distmult import DistMult
 
 #%%
 
 model_map = {
 
     'complex': ComplEx,
-    # 'distmult': DistMult
+    'distmult': DistMult
 
 }
 
 #%%
 
-model_name = 'complex'
-# model_name  = 'distmult'
+# model_name = 'complex'
+model_name  = 'distmult'
 
 #%%
 
@@ -33,12 +34,12 @@ test_data = FB15k_237(path, split='test')[0].to(device)
 
 #%%
 
-# model_arg_map = {'rotate': {'margin': 9.0}}
+model_arg_map = {'rotate': {'margin': 9.0}}
 model = model_map[model_name](
     num_nodes=train_data.num_nodes,
     num_relations=train_data.num_edge_types,
     hidden_channels=50
- #   **model_arg_map.get(model_name, {}),
+    **model_arg_map.get(model_name, {}),
 ).to(device)
 
 #%%

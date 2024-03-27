@@ -4,21 +4,23 @@ import torch
 import torch.optim as optim
 
 from torch_geometric.datasets import FB15k_237
-from batch_ns_complex import ComplEx #, DistMult
+from batch_ns_complex import ComplEx #,
+from batch_ns_distmult import DistMult
+# DistMult
 
 #%%
 
 model_map = {
 
     'complex': ComplEx,
-    # 'distmult': DistMult
+    'distmult': DistMult
 
 }
 
 #%%
 
-model_name = 'complex'
-# model_name  = 'distmult'
+# model_name = 'complex'
+model_name  = 'distmult'
 
 #%%
 

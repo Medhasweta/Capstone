@@ -75,8 +75,8 @@ class MetaQADataset(torch_geometric.data.InMemoryDataset):
         torch.save((data, slices), self.processed_paths[0])
 
 
-FB15k_dset = MetaQADataset(root='/Users/medhaswetasen/Documents/GitHub/Capstone Data/__Parent__/EmbedKGQA/data/MetaQA')
-data = FB15k_dset[0]
+# FB15k_dset = MetaQADataset(root='/Users/medhaswetasen/Documents/GitHub/Capstone Data/__Parent__/EmbedKGQA/data/MetaQA')
+# data = FB15k_dset[0]
 #
 # print(f'The graph has a total of {data.num_entities} entities and {data.num_relations} relations.')
 # print(f'The train split has {data.train_edge_type.size()[0]} relation triples.')

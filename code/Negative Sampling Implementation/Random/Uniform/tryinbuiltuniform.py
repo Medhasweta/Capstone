@@ -4,21 +4,24 @@ import torch
 import torch.optim as optim
 
 from torch_geometric.datasets import FB15k_237
-from complexuniform import ComplEx #, DistMult
+from torch_geometric.nn import ComplEx, DistMult, RotatE
 
 #%%
 
 model_map = {
 
     'complex': ComplEx,
-    # 'distmult': DistMult
+    'distmult': DistMult,
+    'rotate': RotatE
 
 }
 
 #%%
 
-model_name = 'complex'
+# model_name = 'complex'
 # model_name  = 'distmult'
+model_name = 'rotate'
+
 
 #%%
 
@@ -33,12 +36,12 @@ test_data = FB15k_237(path, split='test')[0].to(device)
 
 #%%
 
-# model_arg_map = {'rotate': {'margin': 9.0}}
+model_arg_map = {'rotate': {'margin': 9.0}}
 model = model_map[model_name](
     num_nodes=train_data.num_nodes,
     num_relations=train_data.num_edge_types,
-    hidden_channels=50
- #   **model_arg_map.get(model_name, {}),
+    hidden_channels=50,
+    **model_arg_map.get(model_name, {}),
 ).to(device)
 
 #%%
@@ -56,7 +59,8 @@ loader = model.loader(
 optimizer_map = {
 
     'complex': optim.Adagrad(model.parameters(), lr=0.001, weight_decay=1e-6),
-    'distmult': optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-6)
+    'distmult': optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-6),
+    'rotate': optim.Adam(model.parameters(), lr=1e-3)
 
 }
 
