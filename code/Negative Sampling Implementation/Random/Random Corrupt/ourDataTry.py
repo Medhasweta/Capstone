@@ -12,8 +12,8 @@ from random_corrupt_rotate import RotatE
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # FB15k_dset = MetaQADataset(root='packageData')
-FB15k_dset = MetaQADataset(root='MetaQA')
-# FB15k_dset = MetaQADataset(root='fbwq')
+FB15k_dset = MetaQADataset(root='/home/ubuntu/capstone/data/MetaQA')
+# FB15k_dset = MetaQADataset(root='/home/ubuntu/capstone/data/fbwq')
 data = FB15k_dset[0].to(device)
 
 model_map = {

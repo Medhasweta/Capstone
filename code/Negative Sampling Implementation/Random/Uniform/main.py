@@ -20,36 +20,36 @@ def str2bool(v):
     else:
         return True
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument('--hops', type=str, default='1')
-# parser.add_argument('--ls', type=float, default=0.0)
-# parser.add_argument('--validate_every', type=int, default=5)
-# parser.add_argument('--model', type=str, default='Rotat3')
-# parser.add_argument('--kg_type', type=str, default='half')
-#
-# parser.add_argument('--mode', type=str, default='eval')
-# parser.add_argument('--batch_size', type=int, default=1024)
-# parser.add_argument('--dropout', type=float, default=0.1)
-# parser.add_argument('--entdrop', type=float, default=0.0)
-# parser.add_argument('--reldrop', type=float, default=0.0)
-# parser.add_argument('--scoredrop', type=float, default=0.0)
-# parser.add_argument('--l3_reg', type=float, default=0.0)
-# parser.add_argument('--decay', type=float, default=1.0)
-# parser.add_argument('--shuffle_data', type=bool, default=True)
-# parser.add_argument('--num_workers', type=int, default=15)
-# parser.add_argument('--lr', type=float, default=0.0001)
-# parser.add_argument('--nb_epochs', type=int, default=90)
-# parser.add_argument('--gpu', type=int, default=0)
-# parser.add_argument('--neg_batch_size', type=int, default=128)
-# parser.add_argument('--hidden_dim', type=int, default=200)
-# parser.add_argument('--embedding_dim', type=int, default=256)
-# parser.add_argument('--relation_dim', type=int, default=30)
-# parser.add_argument('--use_cuda', type=bool, default=True)
-# parser.add_argument('--patience', type=int, default=5)
-# parser.add_argument('--freeze', type=str2bool, default=True)
+parser = argparse.ArgumentParser()
+parser.add_argument('--hops', type=str, default='1')
+parser.add_argument('--ls', type=float, default=0.0)
+parser.add_argument('--validate_every', type=int, default=5)
+parser.add_argument('--model', type=str, default='Rotat3')
+parser.add_argument('--kg_type', type=str, default='half')
 
-# os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3,4,5,6,7"
-# args = parser.parse_args()
+parser.add_argument('--mode', type=str, default='eval')
+parser.add_argument('--batch_size', type=int, default=1024)
+parser.add_argument('--dropout', type=float, default=0.1)
+parser.add_argument('--entdrop', type=float, default=0.0)
+parser.add_argument('--reldrop', type=float, default=0.0)
+parser.add_argument('--scoredrop', type=float, default=0.0)
+parser.add_argument('--l3_reg', type=float, default=0.0)
+parser.add_argument('--decay', type=float, default=1.0)
+parser.add_argument('--shuffle_data', type=bool, default=True)
+parser.add_argument('--num_workers', type=int, default=15)
+parser.add_argument('--lr', type=float, default=0.0001)
+parser.add_argument('--nb_epochs', type=int, default=90)
+parser.add_argument('--gpu', type=int, default=0)
+parser.add_argument('--neg_batch_size', type=int, default=128)
+parser.add_argument('--hidden_dim', type=int, default=200)
+parser.add_argument('--embedding_dim', type=int, default=256)
+parser.add_argument('--relation_dim', type=int, default=30)
+parser.add_argument('--use_cuda', type=bool, default=True)
+parser.add_argument('--patience', type=int, default=5)
+parser.add_argument('--freeze', type=str2bool, default=True)
+
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3,4,5,6,7"
+args = parser.parse_args()
 
 
 def prepare_embeddings(embedding_dict):
@@ -406,7 +406,7 @@ for i in range(3):
     bn_list.append(bn.item())
 
 perform_experiment(data_path=data_path, 
-mode= eval# args.mode,
+mode=args.mode,
 entity_path=entity_embedding_path, 
 relation_path=relation_embedding_path,
 entity_dict=entity_dict, 

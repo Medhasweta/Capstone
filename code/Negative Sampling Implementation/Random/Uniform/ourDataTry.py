@@ -9,8 +9,8 @@ from torch_geometric.nn import ComplEx, DistMult, RotatE # from torch_geometric.
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # FB15k_dset = MetaQADataset(root='packageData')
-FB15k_dset = MetaQADataset(root='MetaQA')
-# FB15k_dset = MetaQADataset(root='fbwq')
+FB15k_dset = MetaQADataset(root='/home/ubuntu/capstone/data/MetaQA')
+# FB15k_dset = MetaQADataset(root='/home/ubuntu/capstone/data/fbwq')
 data = FB15k_dset[0].to(device)
 
 model_map = {
@@ -21,8 +21,8 @@ model_map = {
 
 }
 # model_name = 'complex'
-# model_name  = 'distmult'
-model_name = 'rotate'
+model_name  = 'distmult'
+# model_name = 'rotate'
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--model', choices=model_map.keys(), type=str.lower,
