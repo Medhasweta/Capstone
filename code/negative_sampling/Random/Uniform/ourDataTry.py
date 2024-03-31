@@ -137,6 +137,17 @@ import numpy as np
 for name, param in model.named_parameters():
     print(name)
 
+# Assuming 'bn0' is your batch normalization layer
+bn0_state = {
+    'weight': model.bn0.weight.data.cpu().numpy(),
+    'bias': model.bn0.bias.data.cpu().numpy(),
+    'running_mean': model.bn0.running_mean.data.cpu().numpy(),
+    'running_var': model.bn0.running_var.data.cpu().numpy()
+}
+
+# Now save it
+np.save('bn0.npy', bn0_state)
+
 
 # Correct key for entity embeddings
 entity_embeddings = model.state_dict()['node_emb.weight'].cpu().numpy()
@@ -160,3 +171,19 @@ imaginary_part_entities = entity_embeddings[:, embedding_dim:]
 
 real_part_relations = relation_embeddings[:, :embedding_dim]
 imaginary_part_relations = relation_embeddings[:, embedding_dim:]
+
+
+import numpy as np
+
+# Function to save the batch normalization state
+def save_bn_state(bn_layer, filename):
+    bn_state = {
+        'weight': bn_layer.weight.data.cpu().numpy(),
+        'bias': bn_layer.bias.data.cpu().numpy(),
+        'running_mean': bn_layer.running_mean.data.cpu().numpy(),
+        'running_var': bn_layer.running_var.data.cpu().numpy()
+    }
+    np.save(filename, bn_state)
+
+# Example usage for saving bn0 state
+save_bn_state(model.bn0, 'bn0_state.npy')

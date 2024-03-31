@@ -1,121 +1,70 @@
 import torch
-import torch
 import torch.nn as nn
-import torch.nn.utils
 import torch.nn.functional as F
-from torch.autograd import Variable
-from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
-import torch.nn.functional as F
-import numpy as np
 from torch.nn.init import xavier_normal_
 
 class RelationExtractor(nn.Module):
-
-    def __init__(self, embedding_dim, hidden_dim, vocab_size, relation_dim, num_entities, pretrained_embeddings, device, entdrop, reldrop, scoredrop, l3_reg, model, ls, w_matrix, bn_list, freeze=True):
+    def __init__(self, embedding_dim, hidden_dim, vocab_size, relation_dim, num_entities, pretrained_embeddings, device, entdrop, reldrop, scoredrop, l3_reg, model, ls, w_matrix=None, bn_list=None, freeze=True):
         super(RelationExtractor, self).__init__()
         self.device = device
-        self.bn_list = bn_list
         self.model = model
         self.freeze = freeze
         self.label_smoothing = ls
         self.l3_reg = l3_reg
-        if self.model == 'DistMult':
-            multiplier = 1
-            self.getScores = self.DistMult
-        elif self.model == 'SimplE':
-            multiplier = 2
-            self.getScores = self.SimplE
-        elif self.model == 'ComplEx':
-            multiplier = 2
-            self.getScores = self.ComplEx
-        elif self.model == 'Rotat3':
-            multiplier = 3
-            self.getScores = self.Rotat3
-        elif self.model == 'TuckER':
-            W_torch = torch.from_numpy(np.load(w_matrix))
-            self.W = nn.Parameter(
-                torch.Tensor(W_torch), 
-                requires_grad = True
-            )
-            # self.W = nn.Parameter(torch.tensor(np.random.uniform(-1, 1, (relation_dim, relation_dim, relation_dim)), 
-            #                         dtype=torch.float, device="cuda", requires_grad=True))
-            multiplier = 1
-            self.getScores = self.TuckER
-        elif self.model == 'RESCAL':
-            self.getScores = self.RESCAL
-            multiplier = 1
-        else:
-            print('Incorrect model specified:', self.model)
-            exit(0)
-        print('Model is', self.model)
-        self.hidden_dim = hidden_dim
-        self.relation_dim = relation_dim * multiplier
-        if self.model == 'RESCAL':
-            self.relation_dim = relation_dim * relation_dim
-        self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
-        self.n_layers = 1
-        self.bidirectional = True
         
+        # Adjust scoring function based on the model
+        if hasattr(self, model):
+            self.getScores = getattr(self, model)
+        else:
+            print(f"Warning: {model} scoring function not implemented. Falling back to a default scoring function.")
+            self.getScores = self.default_score
+
+        self.hidden_dim = hidden_dim
+        self.relation_dim = relation_dim
+        self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
         self.num_entities = num_entities
         self.loss = torch.nn.BCELoss(reduction='sum')
 
-        # best: all dropout 0
-        self.rel_dropout = torch.nn.Dropout(reldrop)
-        self.ent_dropout = torch.nn.Dropout(entdrop)
-        self.score_dropout = torch.nn.Dropout(scoredrop)
-
-        # The LSTM takes word embeddings as inputs, and outputs hidden states
-        # with dimensionality hidden_dim.
+        self.rel_dropout = nn.Dropout(reldrop)
+        self.ent_dropout = nn.Dropout(entdrop)
+        self.score_dropout = nn.Dropout(scoredrop)
         self.pretrained_embeddings = pretrained_embeddings
-        print('Frozen:', self.freeze)
         self.embedding = nn.Embedding.from_pretrained(torch.FloatTensor(pretrained_embeddings), freeze=self.freeze)
-        # self.embedding = nn.Embedding(self.num_entities, self.relation_dim)
-        # xavier_normal_(self.embedding.weight.data)
 
-        self.mid1 = 256
-        self.mid2 = 256
-
+        self.mid1, self.mid2 = 256, 256
         self.lin1 = nn.Linear(hidden_dim * 2, self.mid1, bias=False)
         self.lin2 = nn.Linear(self.mid1, self.mid2, bias=False)
+        self.hidden2rel = nn.Linear(self.mid2, self.relation_dim)
         xavier_normal_(self.lin1.weight.data)
         xavier_normal_(self.lin2.weight.data)
-        self.hidden2rel = nn.Linear(self.mid2, self.relation_dim)
-        self.hidden2rel_base = nn.Linear(hidden_dim * 2, self.relation_dim)
 
-        if self.model in ['DistMult', 'TuckER', 'RESCAL', 'SimplE']:
-            self.bn0 = torch.nn.BatchNorm1d(self.embedding.weight.size(1))
-            self.bn2 = torch.nn.BatchNorm1d(self.embedding.weight.size(1))
-        else:
-            self.bn0 = torch.nn.BatchNorm1d(multiplier)
-            self.bn2 = torch.nn.BatchNorm1d(multiplier)
+        # Optionally include Batch Normalization
+        self.include_bn = bn_list is not None and model in ['TuckER', 'RESCAL', 'SimplE']
+        if self.include_bn:
+            self.init_bn_layers(bn_list)
 
-        for i in range(3):
-            for key, value in self.bn_list[i].items():
-                self.bn_list[i][key] = torch.Tensor(value).to(device)
+        if self.model == 'TuckER' and w_matrix is not None:
+            W_torch = torch.from_numpy(np.load(w_matrix))
+            self.W = nn.Parameter(torch.Tensor(W_torch), requires_grad=True)
+        elif self.model == 'TuckER':
+            # Initialize W with random values or handle appropriately
+            self.W = nn.Parameter(torch.Tensor(relation_dim, relation_dim, relation_dim))
+            nn.init.xavier_normal_(self.W.data)
 
-        
-        self.bn0.weight.data = self.bn_list[0]['weight']
-        self.bn0.bias.data = self.bn_list[0]['bias']
-        self.bn0.running_mean.data = self.bn_list[0]['running_mean']
-        self.bn0.running_var.data = self.bn_list[0]['running_var']
+        self.GRU = nn.LSTM(embedding_dim, self.hidden_dim, num_layers=1, bidirectional=True, batch_first=True)
 
-        self.bn2.weight.data = self.bn_list[2]['weight']
-        self.bn2.bias.data = self.bn_list[2]['bias']
-        self.bn2.running_mean.data = self.bn_list[2]['running_mean']
-        self.bn2.running_var.data = self.bn_list[2]['running_var']
-
-        self.logsoftmax = torch.nn.LogSoftmax(dim=-1)
-        self.GRU = nn.LSTM(embedding_dim, self.hidden_dim, self.n_layers, bidirectional=self.bidirectional, batch_first=True)
-        
+    def init_bn_layers(self, bn_list):
+        # Initialize BN layers based on bn_list contents
+        self.bn0 = nn.BatchNorm1d(self.embedding.weight.size(1))
+        self.bn2 = nn.BatchNorm1d(self.embedding.weight.size(1))
+        for i, bn_state in enumerate(bn_list):
+            for param_name, param_value in bn_state.items():
+                setattr(getattr(self, f'bn{i}'), param_name, torch.nn.Parameter(torch.Tensor(param_value).to(self.device)))
 
     def applyNonLinear(self, outputs):
-        outputs = self.lin1(outputs)
-        outputs = F.relu(outputs)
-        outputs = self.lin2(outputs)
-        outputs = F.relu(outputs)
-        outputs = self.hidden2rel(outputs)
-        # outputs = self.hidden2rel_base(outputs)
-        return outputs
+        outputs = F.relu(self.lin1(outputs))
+        outputs = F.relu(self.lin2(outputs))
+        return self.hidden2rel(outputs)
 
     def TuckER(self, head, relation):
         head = self.bn0(head)

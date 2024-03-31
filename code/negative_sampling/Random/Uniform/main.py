@@ -112,7 +112,7 @@ def inTopk(scores, ans, k):
 
 def validate(data_path, device, model, word2idx, entity2idx, model_name, return_hits_at_k):
     model.eval()
-    data = process_text_file(data_path)
+    data = preprocess_entities_relations(data_path)
     answers = []
     data_gen = data_generator(data=data, word2ix=word2idx, entity2idx=entity2idx)
     total_correct = 0
@@ -229,7 +229,7 @@ def perform_experiment(data_path, mode, entity_path, relation_path, entity_dict,
     relations = np.load(relation_path)
     e,r = preprocess_entities_relations(entity_dict, relation_dict, entities, relations)
     entity2idx, idx2entity, embedding_matrix = prepare_embeddings(e)
-    data = process_text_file(data_path, split=False)
+    data = preprocess_entities_relations(data_path, split=False)
     # data = pickle.load(open(data_path, 'rb'))
     word2ix,idx2word, max_len = get_vocab(data)
     hops = str(num_hops)
@@ -332,34 +332,40 @@ def perform_experiment(data_path, mode, entity_path, relation_path, entity_dict,
         df = pd.DataFrame(data=d)
         df.to_csv(f"final_results.csv", mode='a', index=False, header=False)       
                     
+def preprocess_entities_relations(entity_dict, relation_dict, entities, relations):
+    e = {}
+    r = {}
 
-def process_text_file(text_file, split=False):
-    data_file = open(text_file, 'r')
-    data_array = []
-    for data_line in data_file.readlines():
-        data_line = data_line.strip()
-        if data_line == '':
-            continue
-        data_line = data_line.strip().split('\t')
-        question = data_line[0].split('[')
-        question_1 = question[0]
-        question_2 = question[1].split(']')
-        head = question_2[0].strip()
-        question_2 = question_2[1]
-        question = question_1+'NE'+question_2
-        ans = data_line[1].split('|')
-        data_array.append([head, question.strip(), ans])
-    if split==False:
-        return data_array
-    else:
-        data = []
-        for line in data_array:
-            head = line[0]
-            question = line[1]
-            tails = line[2]
-            for tail in tails:
-                data.append([head, question, tail])
-        return data
+    # Assuming `entity_dict` is the path to your entities dictionary file
+    with open(entity_dict, 'r') as f:
+        for line in f:
+            line = line.strip().split('\t')  # or split by whatever delimiter is used
+            # Assuming the format is "entity_name    entity_id"
+            if len(line) == 2:
+                entity_name, entity_id_str = line
+                try:
+                    ent_id = int(entity_id_str)
+                    e[entity_name] = entities[ent_id]
+                except ValueError:
+                    # Handle cases where conversion to integer fails
+                    print(f"Skipping line due to ValueError: {line}")
+
+    # Do similar processing for relations
+    with open(relation_dict, 'r') as f:
+        for line in f:
+            line = line.strip().split('\t')  # or split by whatever delimiter is used
+            if len(line) == 2:
+                relation_name, relation_id_str = line
+                try:
+                    rel_id = int(relation_id_str)
+                    r[relation_name] = relations[rel_id]
+                except ValueError:
+                    # Handle cases where conversion to integer fails
+                    print(f"Skipping line due to ValueError: {line}")
+
+    return e, r
+
+
 
 def data_generator(data, word2ix, entity2idx):
     for i in range(len(data)):
@@ -375,35 +381,54 @@ def data_generator(data, word2ix, entity2idx):
         yield torch.tensor(head, dtype=torch.long),torch.tensor(encoded_question, dtype=torch.long) , ans, torch.tensor(len(encoded_question), dtype=torch.long), data_sample[1]
 
 
-
-
-hops = args.hops
-if hops in ['1', '2', '3']:
-    hops = hops + 'hop'
-if args.kg_type == 'half':
-    data_path = '../../data/QA_data/MetaQA/qa_train_' + hops + '_half.txt'
-else:
-    data_path = '../../data/QA_data/MetaQA/qa_train_' + hops + '.txt'
-
-valid_data_path = '../../data/QA_data/MetaQA/qa_dev_' + hops + '.txt'
-test_data_path = '../../data/QA_data/MetaQA/qa_test_' + hops + '.txt'
+# Parse command-line arguments
+args = parser.parse_args()
 
 model_name = args.model
+
+# Define the base paths for the data and embeddings
+data_base_path = 'MetaQA/'
+embeddings_base_path = 'MetaQA/'
+metaqa_base_path = 'MetaQA/'  # Add this line
+
+
+# Use these base paths to construct full paths to the data and embedding files
+hops_suffix = f"{args.hops}hop" if args.hops in ['1', '2', '3'] else args.hops
+kg_suffix = '_half' if args.kg_type == 'half' else ''
+
+# Now we can define kg_type because args has been parsed
 kg_type = args.kg_type
 print('KG type is', kg_type)
-embedding_folder = '../../pretrained_models/embeddings/' + model_name + '_MetaQA_' + kg_type
 
-entity_embedding_path = embedding_folder + '/E.npy'
-relation_embedding_path = embedding_folder + '/R.npy'
-entity_dict = embedding_folder + '/entities.dict'
-relation_dict = embedding_folder + '/relations.dict'
-w_matrix =  embedding_folder + '/W.npy'
+data_path = f'{data_base_path}qa_train_{hops_suffix}{kg_suffix}.txt'
+valid_data_path = f'{data_base_path}qa_dev_{hops_suffix}.txt'
+test_data_path = f'{data_base_path}qa_test_{hops_suffix}.txt'
 
-bn_list = []
+# Embeddings and dictionaries are directly within the 'MetaQA' folder as per your screenshot
+entity_embedding_path = 'E.npy'
+relation_embedding_path = 'R.npy'
+# Since entities.dict and relations.dict are in the MetaQA/raw folder
+raw_data_path = f'{metaqa_base_path}raw/'
 
-for i in range(3):
-    bn = np.load(embedding_folder + '/bn' + str(i) + '.npy', allow_pickle=True)
-    bn_list.append(bn.item())
+entity_dict = f'{raw_data_path}entities.dict'
+relation_dict = f'{raw_data_path}relations.dict'
+
+
+
+# Adjust w_matrix based on the model requirement
+if model_name == 'TuckER':
+    w_matrix_path = f'{embeddings_base_path}W.npy'
+    w_matrix = w_matrix_path if os.path.exists(w_matrix_path) else None
+else:
+    w_matrix = None
+
+
+
+#bn_list = []
+
+#for i in range(3):
+ #   bn = np.load(embedding_folder + '/bn' + str(i) + '.npy', allow_pickle=True)
+  #  bn_list.append(bn.item())
 
 perform_experiment(data_path=data_path, 
 mode=args.mode,
@@ -436,5 +461,5 @@ model_name=args.model,
 decay=args.decay,
 ls=args.ls,
 w_matrix=w_matrix,
-bn_list=bn_list,
+bn_list=[],
 kg_type=kg_type)
