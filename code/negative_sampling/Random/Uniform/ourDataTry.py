@@ -50,21 +50,21 @@ model_arg_map = {'rotate': {'margin': 9.0}}
 model = model_map[model_name](
     num_nodes=data.num_entities,
     num_relations=data.num_relations,
-    hidden_channels=50,
+    hidden_channels=50, #each entity and each relation in the graph is represented as a 50-dimensional vector.
     **model_arg_map.get(model_name, {}),
 ).to(device)
 
 loader = model.loader(
-    head_index=data.train_edge_index[0],
-    rel_type=data.train_edge_type,
+    head_index=data.train_edge_index[0], #tensor with two rows, columns reps edge, first row contains the indices of the head entities, second row contains the tail entities 
+    rel_type=data.train_edge_type, #This tells the model what kind of relation connects the head and tail entities.
     tail_index=data.train_edge_index[1],
-    batch_size=1000,
+    batch_size=1000, #Specifies how many edges (head, relation type, tail triples) to process in each batch. A batch size of 1000 means that the model will process 1000 edges at a time during training. 
     shuffle=True,
 )
 #
 optimizer_map = {
 
-    'complex': optim.Adagrad(model.parameters(), lr=0.001, weight_decay=1e-6),
+    'complex': optim.Adagrad(model.parameters(), lr=0.001, weight_decay=1e-6), #default lr applied and small L2 regulariation pressure applied,  Given the sparse nature of knowledge graphs, Adagrad's mechanism of adapting learning rates to the frequency of features helps ensure that less frequent relations and entities still receive sufficient attention during the training process
     'distmult': optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-6),
     'rotate': optim.Adam(model.parameters(), lr=1e-3)
 
