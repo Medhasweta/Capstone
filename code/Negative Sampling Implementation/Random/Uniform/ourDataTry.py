@@ -7,6 +7,7 @@ from torch_geometric.nn import ComplEx, DistMult, RotatE # from torch_geometric.
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(device)
 
 # FB15k_dset = MetaQADataset(root='packageData')
 FB15k_dset = MetaQADataset(root='/home/ubuntu/capstone/data/MetaQA')
@@ -110,7 +111,7 @@ def testing(data):
     )
 
 #
-for epoch in range(1, 51):
+for epoch in range(1, 5):
     loss = train()
     print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}')
     if epoch % 25 == 0:
@@ -132,16 +133,33 @@ print(f'Test Mean Rank: {rank:.2f}, Test MRR: {mrr:.4f}, '
 
 # dimensions
 
-import torch
-import numpy as np
+# import torch
+# import numpy as np
+#
+# # Assuming 'model' is your trained model instance
+# # and it has been moved to 'cpu' for saving purposes
+#
+# # Extract embeddings from the model
+# node_embeddings = model.state_dict()['node_emb.weight'].cpu().numpy()
+# relation_embeddings = model.state_dict()['rel_emb.weight'].cpu().numpy()
+#
+# # Save the embeddings as .npy files
+# np.save('E.npy', node_embeddings)
+# np.save('R.npy', relation_embeddings)
 
-# Assuming 'model' is your trained model instance
-# and it has been moved to 'cpu' for saving purposes
 
-# Extract embeddings from the model
-node_embeddings = model.state_dict()['node_emb.weight'].cpu().numpy()
-relation_embeddings = model.state_dict()['rel_emb.weight'].cpu().numpy()
+node_embeddings = model.node_emb.weight
+# edge_embeddings = model.edge_emb.weight
+with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
+    lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
+    entities_dict = {key: node_embeddings[int(value)] for key, value in lines}
 
-# Save the embeddings as .npy files
-np.save('E.npy', node_embeddings)
-np.save('R.npy', relation_embeddings)
+import pickle
+# Save with pickle
+with open('entities_dict_tensors.pkl', 'wb') as pickle_file:
+    pickle.dump(entities_dict, pickle_file)
+
+# with open('entities_dict_tensors.pkl', 'rb') as pickle_file:
+#     e = pickle.load(pickle_file)
+
+# print(entities_dict['yakuza'])

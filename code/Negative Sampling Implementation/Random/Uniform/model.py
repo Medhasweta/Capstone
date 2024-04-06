@@ -1,24 +1,44 @@
 import torch
-import torch
 import torch.nn as nn
 import torch.nn.utils
 import torch.nn.functional as F
 from torch.autograd import Variable
-from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 import torch.nn.functional as F
 import numpy as np
 from torch.nn.init import xavier_normal_
+from transformers import *
+import random
+from helpers import *
 
 class RelationExtractor(nn.Module):
 
-    def __init__(self, embedding_dim, hidden_dim, vocab_size, relation_dim, num_entities, pretrained_embeddings, device, entdrop, reldrop, scoredrop, l3_reg, model, ls, w_matrix, bn_list, freeze=True):
+    def __init__(self, embedding_dim, relation_dim, num_entities, pretrained_embeddings, device, entdrop, reldrop, scoredrop, l3_reg, model, que_embedding_model, ls, do_batch_norm, freeze=True):
         super(RelationExtractor, self).__init__()
         self.device = device
-        self.bn_list = bn_list
         self.model = model
         self.freeze = freeze
         self.label_smoothing = ls
         self.l3_reg = l3_reg
+        self.do_batch_norm = do_batch_norm
+        if not self.do_batch_norm:
+            print('Not doing batch norm')
+        self.pre_trained_model_name = get_pretrained_model_name(que_embedding_model)
+        if que_embedding_model == 'RoBERTa':
+            self.que_embedding_model = RobertaModel.from_pretrained(self.pre_trained_model_name)
+        elif que_embedding_model == 'XLNet':
+            self.que_embedding_model = XLNetModel.from_pretrained(self.pre_trained_model_name)
+        elif que_embedding_model == 'ALBERT':
+            self.que_embedding_model = AlbertModel.from_pretrained(self.pre_trained_model_name)
+        elif que_embedding_model == 'SentenceTransformer':
+            self.que_embedding_model = AutoModel.from_pretrained(self.pre_trained_model_name)
+        elif que_embedding_model == 'Longformer':
+            self.que_embedding_model = LongformerModel.from_pretrained(self.pre_trained_model_name)
+        else:
+            print('Incorrect question embeddding model specified:', que_embedding_model)
+            exit(0)
+
+        for param in self.que_embedding_model.parameters():
+            param.requires_grad = True
         if self.model == 'DistMult':
             multiplier = 1
             self.getScores = self.DistMult
@@ -28,17 +48,14 @@ class RelationExtractor(nn.Module):
         elif self.model == 'ComplEx':
             multiplier = 2
             self.getScores = self.ComplEx
-        elif self.model == 'Rotat3':
-            multiplier = 3
-            self.getScores = self.Rotat3
         elif self.model == 'TuckER':
-            W_torch = torch.from_numpy(np.load(w_matrix))
-            self.W = nn.Parameter(
-                torch.Tensor(W_torch), 
-                requires_grad = True
-            )
-            # self.W = nn.Parameter(torch.tensor(np.random.uniform(-1, 1, (relation_dim, relation_dim, relation_dim)), 
-            #                         dtype=torch.float, device="cuda", requires_grad=True))
+            # W_torch = torch.from_numpy(np.load(w_matrix))
+            # self.W = nn.Parameter(
+            #     torch.Tensor(W_torch), 
+            #     requires_grad = not self.freeze
+            # )
+            self.W = nn.Parameter(torch.tensor(np.random.uniform(-1, 1, (relation_dim, relation_dim, relation_dim)), 
+                                    dtype=torch.float, device="cuda", requires_grad=True))
             multiplier = 1
             self.getScores = self.TuckER
         elif self.model == 'RESCAL':
@@ -48,39 +65,44 @@ class RelationExtractor(nn.Module):
             print('Incorrect model specified:', self.model)
             exit(0)
         print('Model is', self.model)
-        self.hidden_dim = hidden_dim
+        self.hidden_dim = 768
         self.relation_dim = relation_dim * multiplier
         if self.model == 'RESCAL':
             self.relation_dim = relation_dim * relation_dim
-        self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
-        self.n_layers = 1
-        self.bidirectional = True
         
         self.num_entities = num_entities
-        self.loss = torch.nn.BCELoss(reduction='sum')
+        # self.loss = torch.nn.BCELoss(reduction='sum')
+        self.loss = self.kge_loss
 
         # best: all dropout 0
         self.rel_dropout = torch.nn.Dropout(reldrop)
         self.ent_dropout = torch.nn.Dropout(entdrop)
         self.score_dropout = torch.nn.Dropout(scoredrop)
+        self.fcnn_dropout = torch.nn.Dropout(0.1)
 
-        # The LSTM takes word embeddings as inputs, and outputs hidden states
-        # with dimensionality hidden_dim.
-        self.pretrained_embeddings = pretrained_embeddings
+        # self.pretrained_embeddings = pretrained_embeddings
+        # random.shuffle(pretrained_embeddings)
+        # print(pretrained_embeddings[0])
         print('Frozen:', self.freeze)
-        self.embedding = nn.Embedding.from_pretrained(torch.FloatTensor(pretrained_embeddings), freeze=self.freeze)
+        self.embedding = nn.Embedding.from_pretrained(torch.stack(pretrained_embeddings, dim=0), freeze=self.freeze)
+        # self.embedding = nn.Embedding.from_pretrained(torch.FloatTensor(pretrained_embeddings), freeze=self.freeze)
+        print(self.embedding.weight.shape)
         # self.embedding = nn.Embedding(self.num_entities, self.relation_dim)
+        # self.embedding.weight.requires_grad = False
         # xavier_normal_(self.embedding.weight.data)
 
-        self.mid1 = 256
-        self.mid2 = 256
+        self.mid1 = 512
+        self.mid2 = 512
+        self.mid3 = 512
+        self.mid4 = 512
 
-        self.lin1 = nn.Linear(hidden_dim * 2, self.mid1, bias=False)
-        self.lin2 = nn.Linear(self.mid1, self.mid2, bias=False)
-        xavier_normal_(self.lin1.weight.data)
-        xavier_normal_(self.lin2.weight.data)
-        self.hidden2rel = nn.Linear(self.mid2, self.relation_dim)
-        self.hidden2rel_base = nn.Linear(hidden_dim * 2, self.relation_dim)
+        # self.lin1 = nn.Linear(self.hidden_dim, self.mid1)
+        # self.lin2 = nn.Linear(self.mid1, self.mid2)
+        # self.lin3 = nn.Linear(self.mid2, self.mid3)
+        # self.lin4 = nn.Linear(self.mid3, self.mid4)
+        # self.hidden2rel = nn.Linear(self.mid4, self.relation_dim)
+        self.hidden2rel = nn.Linear(self.hidden_dim, self.relation_dim)
+        self.hidden2rel_base = nn.Linear(self.mid2, self.relation_dim)
 
         if self.model in ['DistMult', 'TuckER', 'RESCAL', 'SimplE']:
             self.bn0 = torch.nn.BatchNorm1d(self.embedding.weight.size(1))
@@ -89,30 +111,30 @@ class RelationExtractor(nn.Module):
             self.bn0 = torch.nn.BatchNorm1d(multiplier)
             self.bn2 = torch.nn.BatchNorm1d(multiplier)
 
-        for i in range(3):
-            for key, value in self.bn_list[i].items():
-                self.bn_list[i][key] = torch.Tensor(value).to(device)
 
-        
-        self.bn0.weight.data = self.bn_list[0]['weight']
-        self.bn0.bias.data = self.bn_list[0]['bias']
-        self.bn0.running_mean.data = self.bn_list[0]['running_mean']
-        self.bn0.running_var.data = self.bn_list[0]['running_var']
 
-        self.bn2.weight.data = self.bn_list[2]['weight']
-        self.bn2.bias.data = self.bn_list[2]['bias']
-        self.bn2.running_mean.data = self.bn_list[2]['running_mean']
-        self.bn2.running_var.data = self.bn_list[2]['running_var']
+        self.logsoftmax = torch.nn.LogSoftmax(dim=-1)        
+        self._klloss = torch.nn.KLDivLoss(reduction='sum')
 
-        self.logsoftmax = torch.nn.LogSoftmax(dim=-1)
-        self.GRU = nn.LSTM(embedding_dim, self.hidden_dim, self.n_layers, bidirectional=self.bidirectional, batch_first=True)
-        
+    def set_bn_eval(self):
+        self.bn0.eval()
+        self.bn2.eval()
+
+    def kge_loss(self, scores, targets):
+        # loss = torch.mean(scores*targets)
+        return self._klloss(
+            F.log_softmax(scores, dim=1), F.normalize(targets.float(), p=1, dim=1)
+        )
 
     def applyNonLinear(self, outputs):
-        outputs = self.lin1(outputs)
-        outputs = F.relu(outputs)
-        outputs = self.lin2(outputs)
-        outputs = F.relu(outputs)
+        # outputs = self.fcnn_dropout(self.lin1(outputs))
+        # outputs = F.relu(outputs)
+        # outputs = self.fcnn_dropout(self.lin2(outputs))
+        # outputs = F.relu(outputs)
+        # outputs = self.lin3(outputs)
+        # outputs = F.relu(outputs)
+        # outputs = self.lin4(outputs)
+        # outputs = F.relu(outputs)
         outputs = self.hidden2rel(outputs)
         # outputs = self.hidden2rel_base(outputs)
         return outputs
@@ -174,9 +196,13 @@ class RelationExtractor(nn.Module):
         pred = torch.sigmoid(s)
         return pred
 
+
+
     def ComplEx(self, head, relation):
         head = torch.stack(list(torch.chunk(head, 2, dim=1)), dim=1)
-        head = self.bn0(head)
+        if self.do_batch_norm:
+            head = self.bn0(head)
+
         head = self.ent_dropout(head)
         relation = self.rel_dropout(relation)
         head = head.permute(1, 0, 2)
@@ -190,113 +216,63 @@ class RelationExtractor(nn.Module):
         im_score = re_head * im_relation + im_head * re_relation
 
         score = torch.stack([re_score, im_score], dim=1)
-        score = self.bn2(score)
+        if self.do_batch_norm:
+            score = self.bn2(score)
+
         score = self.score_dropout(score)
         score = score.permute(1, 0, 2)
 
         re_score = score[0]
         im_score = score[1]
         score = torch.mm(re_score, re_tail.transpose(1,0)) + torch.mm(im_score, im_tail.transpose(1,0))
-        pred = torch.sigmoid(score)
+        # pred = torch.sigmoid(score)
+        pred = score
         return pred
 
-    def Rotat3(self, head, relation):
-        pi = 3.14159265358979323846
-        relation = F.hardtanh(relation) * pi
-        r = torch.stack(list(torch.chunk(relation, 3, dim=1)), dim=1)
-        h = torch.stack(list(torch.chunk(head, 3, dim=1)), dim=1)
-        h = self.bn0(h)
-        h = self.ent_dropout(h)
-        r = self.rel_dropout(r)
-        
-        r = r.permute(1, 0, 2)
-        h = h.permute(1, 0, 2)
 
-        x = h[0]
-        y = h[1]
-        z = h[2]
-
-        # need to rotate h by r
-        # r contains values in radians
-
-        for i in range(len(r)):
-            sin_r = torch.sin(r[i])
-            cos_r = torch.cos(r[i])
-            if i == 0:
-                x_n = x.clone()
-                y_n = y * cos_r - z * sin_r
-                z_n = y * sin_r + z * cos_r
-            elif i == 1:
-                x_n = x * cos_r - y * sin_r
-                y_n = x * sin_r + y * cos_r
-                z_n = z.clone()
-            elif i == 2:
-                x_n = z * sin_r + x * cos_r
-                y_n = y.clone()
-                z_n = z * cos_r - x * sin_r
-
-            x = x_n
-            y = y_n
-            z = z_n
-
-        s = torch.stack([x, y, z], dim=1)        
-        s = self.bn2(s)
-        s = self.score_dropout(s)
-        s = s.permute(1, 0, 2)
-        s = torch.cat([s[0], s[1], s[2]], dim = 1)
-        ans = torch.mm(s, self.embedding.weight.transpose(1,0))
-        pred = torch.sigmoid(ans)
-        return pred
     
-    def forward(self, sentence, p_head, p_tail, question_len):
-        embeds = self.word_embeddings(sentence)
-        packed_output = pack_padded_sequence(embeds, question_len, batch_first=True)
-        outputs, (hidden, cell_state) = self.GRU(packed_output)
-        outputs, outputs_length = pad_packed_sequence(outputs, batch_first=True)
-        outputs = torch.cat([hidden[0,:,:], hidden[1,:,:]], dim=-1)
-        # outputs = self.drop1(outputs)
-        # rel_embedding = self.hidden2rel(outputs)
-        rel_embedding = self.applyNonLinear(outputs)
+    def getQuestionEmbedding(self, question_tokenized, attention_mask):
+        if self.que_embedding_model == "SentenceTransformer":
+            with torch.no_grad():
+                model_output = self.que_embedding_model(question_tokenized, attention_mask)
+                # model_output = model(**encoded_input) 
+            
+            question_embedding = mean_pooling(model_output, attention_mask)
+            return question_embedding[0]
+        else:
+            last_hidden_states = self.que_embedding_model(
+                                    question_tokenized, 
+                                    attention_mask=attention_mask).last_hidden_state
+            states = last_hidden_states.transpose(1,0)
+            cls_embedding = states[0]
+            question_embedding = cls_embedding
+            question_embedding = torch.mean(last_hidden_states, dim=1)
+            return question_embedding
+
+    def forward(self, question_tokenized, attention_mask, p_head, p_tail):
+        question_embedding = self.getQuestionEmbedding(question_tokenized, attention_mask)
+        rel_embedding = self.applyNonLinear(question_embedding)
         p_head = self.embedding(p_head)
+
         pred = self.getScores(p_head, rel_embedding)
         actual = p_tail
         if self.label_smoothing:
             actual = ((1.0-self.label_smoothing)*actual) + (1.0/actual.size(1)) 
         loss = self.loss(pred, actual)
-        # reg = -0.001
-        # best: reg is 1.0
-        # self.l3_reg = 0.002
-        # self.gamma1 = 1
-        # self.gamma2 = 3
         if not self.freeze:
             if self.l3_reg:
                 norm = torch.norm(self.embedding.weight, p=3, dim=-1)
                 loss = loss + self.l3_reg * torch.sum(norm)
         return loss
         
-    def get_relation_embedding(self, head, sentence, sent_len):
-        embeds = self.word_embeddings(sentence.unsqueeze(0))
-        packed_output = pack_padded_sequence(embeds, sent_len, batch_first=True)
-        outputs, (hidden, cell_state) = self.GRU(packed_output)
-        outputs = torch.cat([hidden[0,:,:], hidden[1,:,:]], dim=-1)
-        # rel_embedding = self.hidden2rel(outputs)
-        rel_embedding = self.applyNonLinear(outputs)
-        return rel_embedding
 
-    def get_score_ranked(self, head, sentence, sent_len):
-        embeds = self.word_embeddings(sentence.unsqueeze(0))
-        packed_output = pack_padded_sequence(embeds, sent_len, batch_first=True)
-        outputs, (hidden, cell_state) = self.GRU(packed_output)
-        outputs = torch.cat([hidden[0,:,:], hidden[1,:,:]], dim=-1)
-        # rel_embedding = self.hidden2rel(outputs)
-        rel_embedding = self.applyNonLinear(outputs)
-
+    def get_score_ranked(self, head, question_tokenized, attention_mask):
+        question_embedding = self.getQuestionEmbedding(question_tokenized.unsqueeze(0), attention_mask.unsqueeze(0))
+        rel_embedding = self.applyNonLinear(question_embedding)
         head = self.embedding(head).unsqueeze(0)
         scores = self.getScores(head, rel_embedding)
-        
-        # top2 = torch.topk(score, k=2, largest=True, sorted=True)
+        # top2 = torch.topk(scores, k=2, largest=True, sorted=True)
         # return top2
-
         return scores
         
 

@@ -18,9 +18,9 @@ model_map = {
 
 #%%
 
-# model_name = 'complex'
+model_name = 'complex'
 # model_name  = 'distmult'
-model_name = 'rotate'
+# model_name = 'rotate'
 
 
 #%%
