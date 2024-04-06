@@ -150,14 +150,15 @@ print(f'Test Mean Rank: {rank:.2f}, Test MRR: {mrr:.4f}, '
 
 node_embeddings = model.node_emb.weight
 # edge_embeddings = model.edge_emb.weight
-with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
-    lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
-    entities_dict = {key: node_embeddings[int(value)] for key, value in lines}
-
-import pickle
-# Save with pickle
-with open('entities_dict_tensors.pkl', 'wb') as pickle_file:
-    pickle.dump(entities_dict, pickle_file)
+# with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
+#     lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
+#     entities_dict = {key: node_embeddings[int(value)] for key, value in lines}
+#
+# print(entities_dict['yakuza'])
+# import pickle
+# # Save with pickle
+# with open('entities_dict_tensors.pkl', 'wb') as pickle_file:
+#     pickle.dump(entities_dict, pickle_file)
 
 # with open('entities_dict_tensors.pkl', 'rb') as pickle_file:
 #     e = pickle.load(pickle_file)

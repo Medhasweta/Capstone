@@ -16,8 +16,9 @@ import time
 import sys
 import pandas as pd
 sys.path.append("../..") # Adds higher directory to python modules path.
-from kge.model import KgeModel
-from kge.util.io import load_checkpoint
+from ourDataTry import node_embeddings
+# from kge.model import KgeModel
+# from kge.util.io import load_checkpoint
 from torch.nn.utils.rnn import pad_sequence
 
 def str2bool(v):
@@ -342,8 +343,9 @@ def perform_experiment(data_path, mode, neg_batch_size, batch_size, shuffle, num
     kge_model.eval()
 
     # e = getEntityEmbeddings(model_name, kge_model, hops)
-    e =
-
+    with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
+        lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
+        e = {key: node_embeddings[int(value)] for key, value in lines}
     print('Loaded entities and relations')
 
     entity2idx, idx2entity, embedding_matrix = prepare_embeddings(e)

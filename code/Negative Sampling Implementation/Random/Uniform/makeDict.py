@@ -3,12 +3,18 @@ import torch_geometric
 import os
 import numpy as np
 import pickle
-
+from ourDataTry import node_embeddings
 with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
     lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
     entities_dict = {key: int(value) for key, value in lines}
 
-entity_embeddings = np.load('/home/ubuntu/capstone/code/Negative Sampling Implementation/Random/Uniform/E.npy')
+# entity_embeddings = np.load('/home/ubuntu/capstone/code/Negative Sampling Implementation/Random/Uniform/E.npy')
 
-with open('entities_dict_tensors.pkl', 'rb') as pickle_file:
-    e = pickle.load(pickle_file)
+# with open('entities_dict_tensors.pkl', 'rb') as pickle_file:
+#     e = pickle.load(pickle_file)
+
+with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
+    lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
+    e = {key: node_embeddings[int(value)] for key, value in lines}
+
+print(e['yakuza'])
