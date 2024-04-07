@@ -13,7 +13,7 @@ from transformers import *
 from helpers import *
 
 class DatasetWebQSP(Dataset):
-    def __init__(self, data, entities, entity2idx, transformer_name, kg_model):
+    def __init__(self, data, entities, entity2idx, transformer_name): # , kg_model
         self.data = data
         self.entities = entities
         self.entity2idx = entity2idx
@@ -25,7 +25,7 @@ class DatasetWebQSP(Dataset):
         self.tokenizer = None
         self.set_tokenizer()
         self.max_length = 64
-        self.kg_model = kg_model
+        # self.kg_model = kg_model
         
     def set_tokenizer(self):
         if self.transformer_name == 'RoBERTa':

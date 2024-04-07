@@ -29,40 +29,40 @@ def str2bool(v):
     else:
         return True
 
-parser = argparse.ArgumentParser()
-
-
-parser.add_argument('--hops', type=str, default='1')
-parser.add_argument('--load_from', type=str, default='')
-parser.add_argument('--ls', type=float, default=0.0)
-parser.add_argument('--validate_every', type=int, default=5)
-parser.add_argument('--model', type=str, default='ComplEx')
-parser.add_argument('--mode', type=str, default='eval')
-parser.add_argument('--outfile', type=str, default='best_score_model')
-parser.add_argument('--batch_size', type=int, default=1024)
-parser.add_argument('--dropout', type=float, default=0.1)
-parser.add_argument('--entdrop', type=float, default=0.0)
-parser.add_argument('--reldrop', type=float, default=0.0)
-parser.add_argument('--scoredrop', type=float, default=0.0)
-parser.add_argument('--l3_reg', type=float, default=0.0)
-parser.add_argument('--decay', type=float, default=1.0)
-parser.add_argument('--shuffle_data', type=bool, default=True)
-parser.add_argument('--num_workers', type=int, default=1)
-parser.add_argument('--lr', type=float, default=0.0001)
-parser.add_argument('--nb_epochs', type=int, default=90)
-parser.add_argument('--gpu', type=int, default=0)
-parser.add_argument('--neg_batch_size', type=int, default=128)
-parser.add_argument('--hidden_dim', type=int, default=200)
-parser.add_argument('--embedding_dim', type=int, default=256)
-parser.add_argument('--relation_dim', type=int, default=30)
-parser.add_argument('--use_cuda', type=bool, default=True)
-parser.add_argument('--patience', type=int, default=5)
-parser.add_argument('--freeze', type=str2bool, default=True)
-parser.add_argument('--do_batch_norm', type=str2bool, default=True)
-parser.add_argument('--que_embedding_model', type=str, default='RoBERTa')
+# parser = argparse.ArgumentParser()
+#
+#
+# parser.add_argument('--hops', type=str, default='1')
+# parser.add_argument('--load_from', type=str, default='')
+# parser.add_argument('--ls', type=float, default=0.0)
+# parser.add_argument('--validate_every', type=int, default=5)
+# parser.add_argument('--model', type=str, default='ComplEx')
+# parser.add_argument('--mode', type=str, default='eval')
+# parser.add_argument('--outfile', type=str, default='best_score_model')
+# parser.add_argument('--batch_size', type=int, default=1024)
+# parser.add_argument('--dropout', type=float, default=0.1)
+# parser.add_argument('--entdrop', type=float, default=0.0)
+# parser.add_argument('--reldrop', type=float, default=0.0)
+# parser.add_argument('--scoredrop', type=float, default=0.0)
+# parser.add_argument('--l3_reg', type=float, default=0.0)
+# parser.add_argument('--decay', type=float, default=1.0)
+# parser.add_argument('--shuffle_data', type=bool, default=True)
+# parser.add_argument('--num_workers', type=int, default=1)
+# parser.add_argument('--lr', type=float, default=0.0001)
+# parser.add_argument('--nb_epochs', type=int, default=90)
+# parser.add_argument('--gpu', type=int, default=0)
+# parser.add_argument('--neg_batch_size', type=int, default=128)
+# parser.add_argument('--hidden_dim', type=int, default=200)
+# parser.add_argument('--embedding_dim', type=int, default=256)
+# parser.add_argument('--relation_dim', type=int, default=30)
+# parser.add_argument('--use_cuda', type=bool, default=True)
+# parser.add_argument('--patience', type=int, default=5)
+# parser.add_argument('--freeze', type=str2bool, default=True)
+# parser.add_argument('--do_batch_norm', type=str2bool, default=True)
+# parser.add_argument('--que_embedding_model', type=str, default='RoBERTa')
 
 os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3,4,5,6,7"
-args = parser.parse_args()
+# args = parser.parse_args()
 
 
 def prepare_embeddings(embedding_dict):
@@ -277,6 +277,7 @@ def test(data_path, device, model, dataloader, entity2idx, model_name, return_hi
     else:
         return answers, accuracy
 
+
 def writeToFile(lines, fname):
     f = open(fname, 'w')
     for line in lines:
@@ -325,22 +326,22 @@ def custom_collate_fn(batch):
     attention_mask = torch.stack(attention_mask, dim=0)
     return question_tokenized, attention_mask, head_id, tail_onehot 
 
-def perform_experiment(data_path, mode, neg_batch_size, batch_size, shuffle, num_workers, nb_epochs, embedding_dim, hidden_dim, relation_dim, gpu, use_cuda,patience, freeze, validate_every, hops, lr, entdrop, reldrop, scoredrop, l3_reg, model_name, decay, ls, load_from, outfile, do_batch_norm, que_embedding_model, valid_data_path=None, test_data_path=None):
+def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epochs, embedding_dim, hidden_dim, relation_dim, use_cuda = True,patience = 10, freeze = 0, validate_every = 4, hops = 1, lr = 0.0005, entdrop=0.1, reldrop = 0.2, scoredrop=0.3, l3_reg = 0.0, model_name='DistMult', decay=1.0, ls=0.0, load_from='', outfile = 'best_score_model', do_batch_norm = True, que_embedding_model = 'RoBERTa', valid_data_path=None, test_data_path=None):
     webqsp_checkpoint_folder = f"../../checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/"
     if not os.path.exists(webqsp_checkpoint_folder):
         os.makedirs(webqsp_checkpoint_folder)
     
     print('Loading entities and relations')
     kg_type = 'full'
-    if 'half' in hops:
-        kg_type = 'half'
+    # if 'half' in hops:
+    #     kg_type = 'half'
     
-    checkpoint_file = f"../../pretrained_models/embeddings/{model_name}_fbwq_{kg_type}/checkpoint_best.pt"
-
-    print('Loading kg embeddings from', checkpoint_file)
-    kge_checkpoint = load_checkpoint(checkpoint_file)
-    kge_model = KgeModel.create_from(kge_checkpoint)
-    kge_model.eval()
+    # checkpoint_file = f"../../pretrained_models/embeddings/{model_name}_fbwq_{kg_type}/checkpoint_best.pt"
+    #
+    # print('Loading kg embeddings from', checkpoint_file)
+    # kge_checkpoint = load_checkpoint(checkpoint_file)
+    # kge_model = KgeModel.create_from(kge_checkpoint)
+    # kge_model.eval()
 
     # e = getEntityEmbeddings(model_name, kge_model, hops)
     with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
@@ -352,13 +353,13 @@ def perform_experiment(data_path, mode, neg_batch_size, batch_size, shuffle, num
 
     # word2ix,idx2word, max_len = get_vocab(data)
     # hops = str(num_hops)
-    device = torch.device(gpu if use_cuda else "cpu")
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = RelationExtractor(embedding_dim=embedding_dim, num_entities = len(idx2entity), relation_dim=relation_dim, pretrained_embeddings=embedding_matrix, freeze=freeze, device=device, entdrop = entdrop, reldrop = reldrop, scoredrop = scoredrop, l3_reg = l3_reg, model = model_name, que_embedding_model=que_embedding_model, ls = ls, do_batch_norm=do_batch_norm)
 
     # time.sleep(10)
     if mode=='train':
         data = process_text_file(data_path)
-        dataset = DatasetWebQSP(data, e, entity2idx, que_embedding_model, model_name)
+        dataset = DatasetWebQSP(data, e, entity2idx, que_embedding_model)
 
         # if model_name=="ComplEx":
         #     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
@@ -413,8 +414,8 @@ def perform_experiment(data_path, mode, neg_batch_size, batch_size, shuffle, num
                         best_score = score
                         no_update = 0
                         best_model = model.state_dict()
-                        print(hops + " hop Validation accuracy (no relation scoring) increased from previous epoch", score)
-                        writeToFile(answers, f'results/{model_name}_{que_embedding_model}_{outfile}.txt')
+                        print(str(hops) + " hop Validation accuracy (no relation scoring) increased from previous epoch", score)
+                        writeToFile(answers, '/home/ubuntu/capstone/code/Negative Sampling Implementation/results/DistMult_RoBERTa_best_score_model.txt')
                         torch.save(best_model, get_chkpt_path(model_name, que_embedding_model, outfile))
                     elif (score < best_score + eps) and (no_update < patience):
                         no_update +=1
@@ -506,46 +507,58 @@ def data_generator(data, dataloader, entity2idx):
 
 
 
-hops = args.hops
+hops = 1
 
-model_name = args.model
+# model_name = args.model
 
-if 'webqsp' in hops:
-    data_path = '../../data/QA_data/WebQuestionsSP/qa_train_webqsp.txt'
-    valid_data_path = '../../data/QA_data/WebQuestionsSP/qa_test_webqsp.txt'
-    test_data_path = '../../data/QA_data/WebQuestionsSP/qa_test_webqsp.txt'
+# if 'webqsp' in hops:
+#     data_path = '../../data/QA_data/WebQuestionsSP/qa_train_webqsp.txt'
+#     valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_1hop.txt'
+#     test_data_path = '../../data/QA_data/WebQuestionsSP/qa_test_webqsp.txt'
+
+if hops ==1 :
+    data_path = '/home/ubuntu/capstone/data/MetaQA/qa_train_1hop.txt'
+    valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_1hop.txt'
+    test_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_test_1hop.txt'
+
+elif hops ==2:
+    data_path = '/home/ubuntu/capstone/data/MetaQA/qa_train_2hop.txt'
+    valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_2hop.txt'
+    test_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_test_2hop.txt'
+
+else:
+    data_path = '/home/ubuntu/capstone/data/MetaQA/qa_train_3hop.txt'
+    valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_3hop.txt'
+    test_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_test_3hop.txt'
 
 
 
 perform_experiment(
-    data_path=data_path, 
-    mode=args.mode,
-    neg_batch_size=args.neg_batch_size, 
-    batch_size=args.batch_size,
-    shuffle=args.shuffle_data, 
-    num_workers=args.num_workers,
-    nb_epochs=args.nb_epochs, 
-    embedding_dim=args.embedding_dim, 
-    hidden_dim=args.hidden_dim, 
-    relation_dim=args.relation_dim, 
-    gpu=args.gpu, 
-    use_cuda=args.use_cuda, 
+    data_path= data_path,
+    mode= "train",
+    batch_size= 160,
+    shuffle=True,
+    num_workers= 1,
+    nb_epochs= 1,
+    embedding_dim= 256,
+    hidden_dim=50,
+    relation_dim=50,
     valid_data_path=valid_data_path,
     test_data_path=test_data_path,
-    patience=args.patience,
-    validate_every=args.validate_every,
-    freeze=args.freeze,
-    hops=args.hops,
-    lr=args.lr,
-    entdrop=args.entdrop,
-    reldrop=args.reldrop,
-    scoredrop = args.scoredrop,
-    l3_reg = args.l3_reg,
-    model_name=args.model,
-    decay=args.decay,
-    ls=args.ls,
-    load_from=args.load_from,
-    outfile=args.outfile,
-    do_batch_norm=args.do_batch_norm,
-    que_embedding_model=args.que_embedding_model
+    patience=10,
+    validate_every=1,
+    freeze=0,
+    hops=1,
+    lr=0.0005,
+    entdrop=0.1,
+    reldrop=0.2,
+    scoredrop = 0.3,
+    l3_reg = 0.0,
+    model_name= 'DistMult',
+    decay=1.0,
+    ls=0.0,
+    load_from='',
+    outfile='best_score_model',
+    do_batch_norm=True,
+    que_embedding_model='RoBERTa'
 )
