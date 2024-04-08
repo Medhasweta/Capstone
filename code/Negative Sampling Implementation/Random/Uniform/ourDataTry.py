@@ -9,7 +9,7 @@ from torch_geometric.nn import ComplEx, DistMult, RotatE # from torch_geometric.
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # FB15k_dset = MetaQADataset(root='packageData')
-FB15k_dset = MetaQADataset(root='MetaQA')
+FB15k_dset = MetaQADataset(root='/Users/yoninayoni/Documents/GitHub/Capstone/code/Negative Sampling Implementation/Random/Uniform/MetaQA')
 # FB15k_dset = MetaQADataset(root='fbwq')
 data = FB15k_dset[0].to(device)
 
