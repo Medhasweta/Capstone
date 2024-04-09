@@ -279,12 +279,15 @@ def test(data_path, device, model, dataloader, entity2idx, model_name, return_hi
 
 
 def writeToFile(lines, fname):
-    f = open(fname, 'w')
-    for line in lines:
-        f.write(line + '\n')
-    f.close()
+    # Make sure the directory exists
+    os.makedirs(os.path.dirname(fname), exist_ok=True)
+
+    # Now write the lines to the file
+    with open(fname, 'w') as f:
+        for line in lines:
+            f.write(line + '\n')
+
     print('Wrote to ', fname)
-    return
 
 def set_bn_eval(m):
     classname = m.__class__.__name__
@@ -309,8 +312,9 @@ def set_bn_eval(m):
 #     f.close()
 #     return e
 
-def get_chkpt_path(model_name, que_embedding_model, outfile):
-    return f"../../checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/best_score_model.pt"
+def get_chkpt_path():
+    return "./checkpoints/best_score_model.pt"
+
 
 def custom_collate_fn(batch):
     print(len(batch))
@@ -327,7 +331,7 @@ def custom_collate_fn(batch):
     return question_tokenized, attention_mask, head_id, tail_onehot 
 
 def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epochs, embedding_dim, hidden_dim, relation_dim, use_cuda = True,patience = 10, freeze = 0, validate_every = 4, hops = 1, lr = 0.0005, entdrop=0.1, reldrop = 0.2, scoredrop=0.3, l3_reg = 0.0, model_name='DistMult', decay=1.0, ls=0.0, load_from='', outfile = 'best_score_model', do_batch_norm = True, que_embedding_model = 'RoBERTa', valid_data_path=None, test_data_path=None):
-    webqsp_checkpoint_folder = f"../../checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/"
+    webqsp_checkpoint_folder = f"./checkpoints/"
     if not os.path.exists(webqsp_checkpoint_folder):
         os.makedirs(webqsp_checkpoint_folder)
     
@@ -344,7 +348,7 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
     # kge_model.eval()
 
     # e = getEntityEmbeddings(model_name, kge_model, hops)
-    with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
+    with open('/home/ubuntu/Capstone/data/MetaQA/raw/entities.dict', 'r') as f:
         lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
         e = {key: node_embeddings[int(value)] for key, value in lines}
     print('Loaded entities and relations')
@@ -370,7 +374,7 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
 
         if load_from != '':
             # model.load_state_dict(torch.load("checkpoints/roberta_finetune/" + load_from + ".pt"))
-            fname = f"checkpoints/{que_embedding_model}_finetune/{load_from}.pt"
+            fname = f"checkpoints/{load_from}.pt"
             model.load_state_dict(torch.load(fname, map_location=lambda storage, loc: storage))
         model.to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -415,18 +419,20 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
                         no_update = 0
                         best_model = model.state_dict()
                         print(str(hops) + " hop Validation accuracy (no relation scoring) increased from previous epoch", score)
-                        writeToFile(answers, '/home/ubuntu/capstone/code/Negative Sampling Implementation/results/DistMult_RoBERTa_best_score_model.txt')
-                        torch.save(best_model, get_chkpt_path(model_name, que_embedding_model, outfile))
+                        writeToFile(answers, '/home/ubuntu/capstone/code/Negative Sampling Implementation/results/a_best_score_model.txt')
+                        
+
+                        torch.save(best_model, get_chkpt_path())
                     elif (score < best_score + eps) and (no_update < patience):
                         no_update +=1
                         print("Validation accuracy decreases to %f from %f, %d more epoch to check"%(score, best_score, patience-no_update))
                     elif no_update == patience:
                         print("Model has exceed patience. Saving best model and exiting")
-                        torch.save(best_model, get_chkpt_path(model_name, que_embedding_model, outfile))
+                        torch.save(best_model, get_chkpt_path())
                         exit(0)
                     if epoch == nb_epochs-1:
                         print("Final Epoch has reached. Stoping and saving model.")
-                        torch.save(best_model, get_chkpt_path(model_name, que_embedding_model, outfile))
+                        torch.save(best_model, get_chkpt_path())
                         exit()
                     # torch.save(model.state_dict(), "checkpoints/roberta_finetune/"+str(epoch)+".pt")
                     # torch.save(model.state_dict(), "checkpoints/roberta_finetune/x.pt")   
@@ -434,7 +440,7 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
     elif mode=='test':
         data = process_text_file(test_data_path)
         dataset = DatasetWebQSP(data, e, entity2idx, que_embedding_model, model_name)
-        model_chkpt_file_path = get_chkpt_path(model_name, que_embedding_model, outfile)
+        model_chkpt_file_path = get_chkpt_path()
         model.load_state_dict(torch.load(model_chkpt_file_path, map_location=lambda storage, loc: storage))
         model.to(device)
         for parameter in model.parameters():
@@ -517,19 +523,19 @@ hops = 1
 #     test_data_path = '../../data/QA_data/WebQuestionsSP/qa_test_webqsp.txt'
 
 if hops ==1 :
-    data_path = '/home/ubuntu/capstone/data/MetaQA/qa_train_1hop.txt'
-    valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_1hop.txt'
-    test_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_test_1hop.txt'
+    data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_train_1hop.txt'
+    valid_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_dev_1hop.txt'
+    test_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_test_1hop.txt'
 
 elif hops ==2:
-    data_path = '/home/ubuntu/capstone/data/MetaQA/qa_train_2hop.txt'
-    valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_2hop.txt'
-    test_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_test_2hop.txt'
+    data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_train_2hop.txt'
+    valid_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_dev_2hop.txt'
+    test_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_test_2hop.txt'
 
 else:
-    data_path = '/home/ubuntu/capstone/data/MetaQA/qa_train_3hop.txt'
-    valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_3hop.txt'
-    test_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_test_3hop.txt'
+    data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_train_3hop.txt'
+    valid_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_dev_3hop.txt'
+    test_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_test_3hop.txt'
 
 
 
