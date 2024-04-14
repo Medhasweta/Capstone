@@ -346,9 +346,9 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
                        entdrop=0.1, reldrop=0.2, scoredrop=0.3, l3_reg=0.0, model_name='DistMult', decay=1.0, ls=0.0,
                        load_from='', outfile='best_score_model', do_batch_norm=True, que_embedding_model='RoBERTa',
                        valid_data_path=None, test_data_path=None):
-    webqsp_checkpoint_folder = f"../../checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/"
-    if not os.path.exists(webqsp_checkpoint_folder):
-        os.makedirs(webqsp_checkpoint_folder)
+    # webqsp_checkpoint_folder = f"../../checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/"
+    # if not os.path.exists(webqsp_checkpoint_folder):
+    #     os.makedirs(webqsp_checkpoint_folder)
 
     print('Loading entities and relations')
     kg_type = 'full'
