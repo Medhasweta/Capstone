@@ -15,19 +15,22 @@ import networkx as nx
 import time
 import sys
 import pandas as pd
-sys.path.append("../..") # Adds higher directory to python modules path.
+
+sys.path.append("../..")  # Adds higher directory to python modules path.
 from ourDataTry import node_embeddings
 # from kge.model import KgeModel
 # from kge.util.io import load_checkpoint
 from torch.nn.utils.rnn import pad_sequence
 
+
 def str2bool(v):
     if isinstance(v, bool):
-       return v
+        return v
     if v.lower() in ('no', 'false', 'f', 'n', '0'):
         return False
     else:
         return True
+
 
 # parser = argparse.ArgumentParser()
 #
@@ -61,7 +64,9 @@ def str2bool(v):
 # parser.add_argument('--do_batch_norm', type=str2bool, default=True)
 # parser.add_argument('--que_embedding_model', type=str, default='RoBERTa')
 
-os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2,3,4,5,6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4,5,6,7"
+
+
 # args = parser.parse_args()
 
 
@@ -77,22 +82,24 @@ def prepare_embeddings(embedding_dict):
         embedding_matrix.append(entity)
     return entity2idx, idx2entity, embedding_matrix
 
+
 def get_vocab(data):
     word_to_ix = {}
     maxLength = 0
     idx2word = {}
     for d in data:
-            sent = d[1]
-            for word in sent.split():
-                if word not in word_to_ix:
-                    idx2word[len(word_to_ix)] = word
-                    word_to_ix[word] = len(word_to_ix)
-                    
-            length = len(sent.split())
-            if length > maxLength:
-                maxLength = length
+        sent = d[1]
+        for word in sent.split():
+            if word not in word_to_ix:
+                idx2word[len(word_to_ix)] = word
+                word_to_ix[word] = len(word_to_ix)
+
+        length = len(sent.split())
+        if length > maxLength:
+            maxLength = length
 
     return word_to_ix, idx2word, maxLength
+
 
 def preprocess_entities_relations(entity_dict, relation_dict, entities, relations):
     e = {}
@@ -104,14 +111,15 @@ def preprocess_entities_relations(entity_dict, relation_dict, entities, relation
         ent_name = line[1]
         e[ent_name] = entities[ent_id]
     f.close()
-    f = open(relation_dict,'r')
+    f = open(relation_dict, 'r')
     for line in f:
         line = line.strip().split('\t')
         rel_id = int(line[0])
         rel_name = line[1]
         r[rel_name] = relations[rel_id]
     f.close()
-    return e,r
+    return e, r
+
 
 def makeGraph(entity2idx):
     f = open('kb.txt', 'r')
@@ -129,6 +137,7 @@ def makeGraph(entity2idx):
         G.add_edge(e1, e2)
     return G
 
+
 def getBest(scores, candidates):
     cand_scores_dict = {}
     highest = 0
@@ -138,7 +147,7 @@ def getBest(scores, candidates):
             highest = scores[c]
             highest_key = c
     return highest_key
-    
+
 
 def getNeighbourhood(graph, entity, radius=1):
     g = nx.ego_graph(graph, entity, radius, center=False)
@@ -155,6 +164,7 @@ def getMask(candidates, entity2idx):
         x[entity2idx[c]] = 0
     return x
 
+
 def inTopk(scores, ans, k):
     result = False
     topk = torch.topk(scores, k)[1]
@@ -162,6 +172,7 @@ def inTopk(scores, ans, k):
         if x in ans:
             result = True
     return result
+
 
 def test(data_path, device, model, dataloader, entity2idx, model_name, return_hits_at_k):
     model.eval()
@@ -200,14 +211,15 @@ def test(data_path, device, model, dataloader, entity2idx, model_name, return_hi
         attention_mask = d[2].to(device)
         ans = d[3]
         tail_test = torch.tensor(ans, dtype=torch.long).to(device)
-        scores = model.get_score_ranked(head=head, question_tokenized=question_tokenized, attention_mask=attention_mask)[0]
+        scores = \
+        model.get_score_ranked(head=head, question_tokenized=question_tokenized, attention_mask=attention_mask)[0]
         # candidates = qa_nbhood_list[i]
         # mask = torch.from_numpy(getMask(candidates, entity2idx)).to(device)
         # following 2 lines for no neighbourhood check
         mask = torch.zeros(len(entity2idx)).to(device)
         mask[head] = 1
-        #reduce scores of all non-candidates
-        new_scores = scores - (mask*99999)
+        # reduce scores of all non-candidates
+        new_scores = scores - (mask * 99999)
         pred_ans = torch.argmax(new_scores).item()
         # new_scores = new_scores.cpu().detach().numpy()
         # scores_list.append(new_scores)
@@ -218,15 +230,15 @@ def test(data_path, device, model, dataloader, entity2idx, model_name, return_hi
         # pred_ans = getBest(scores, candidates)
         # if ans[0] not in candidates:
         #     print('Answer not in candidates')
-            # print(len(candidates))
-            # exit(0)
-        
+        # print(len(candidates))
+        # exit(0)
+
         if writeCandidatesToFile:
             entry = {}
             entry['question'] = d[-1]
             head_text = idx2entity[head.item()]
             entry['head'] = head_text
-            s, c =  torch.topk(new_scores, 200)
+            s, c = torch.topk(new_scores, 200)
             s = s.cpu().detach().numpy()
             c = c.cpu().detach().numpy()
             cands = []
@@ -239,7 +251,6 @@ def test(data_path, device, model, dataloader, entity2idx, model_name, return_hi
                 correct_ans.append(idx2entity[a])
             entry['answers'] = correct_ans
             candidates_with_scores.append(entry)
-
 
         if inTopk(new_scores, ans, 1):
             hit_at_1 += 1
@@ -260,7 +271,7 @@ def test(data_path, device, model, dataloader, entity2idx, model_name, return_hi
         answers.append(q_text + '\t' + str(pred_ans) + '\t' + str(is_correct))
         # except:
         #     error_count += 1
-        
+
     if writeCandidatesToFile:
         # pickle.dump(candidates_with_scores, open('candidates_with_score_and_qe_half.pkl', 'wb'))
         pickle.dump(candidates_with_scores, open('webqsp_scores_finetune.pkl', 'wb'))
@@ -268,31 +279,30 @@ def test(data_path, device, model, dataloader, entity2idx, model_name, return_hi
     # np.save("scores_webqsp_complex.npy", scores_list)
     # exit(0)
     # print(hit_at_10/len(data))
-    accuracy = total_correct/len(data)
+    accuracy = total_correct / len(data)
     # print('Error mean rank: %f' % (incorrect_rank_sum/num_incorrect))
     # print('%d out of %d incorrect were not in top 50' % (not_in_top_50_count, num_incorrect))
 
     if return_hits_at_k:
-        return answers, accuracy, (hit_at_1/len(data)), (hit_at_5/len(data)), (hit_at_10/len(data))
+        return answers, accuracy, (hit_at_1 / len(data)), (hit_at_5 / len(data)), (hit_at_10 / len(data))
     else:
         return answers, accuracy
 
 
 def writeToFile(lines, fname):
-    # Make sure the directory exists
-    os.makedirs(os.path.dirname(fname), exist_ok=True)
-
-    # Now write the lines to the file
-    with open(fname, 'w') as f:
-        for line in lines:
-            f.write(line + '\n')
-
+    f = open(fname, 'w')
+    for line in lines:
+        f.write(line + '\n')
+    f.close()
     print('Wrote to ', fname)
+    return
+
 
 def set_bn_eval(m):
     classname = m.__class__.__name__
     if classname.find('BatchNorm1d') != -1:
         m.eval()
+
 
 # def getEntityEmbeddings(model_name, kge_model, hops):
 #     e = {}
@@ -312,14 +322,14 @@ def set_bn_eval(m):
 #     f.close()
 #     return e
 
-def get_chkpt_path():
-    return "./checkpoints/best_score_model.pt"
+def get_chkpt_path(model_name, que_embedding_model, outfile):
+    return f"../../checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/best_score_model.pt"
 
 
 def custom_collate_fn(batch):
     print(len(batch))
     print(batch)
-    for i,a in enumerate(batch):
+    for i, a in enumerate(batch):
         for x in a:
             print(f"{i}: {x}: {batch}")
     question_tokenized = batch[0]
@@ -328,18 +338,23 @@ def custom_collate_fn(batch):
     tail_onehot = batch[3]
     question_tokenized = torch.stack(question_tokenized, dim=0)
     attention_mask = torch.stack(attention_mask, dim=0)
-    return question_tokenized, attention_mask, head_id, tail_onehot 
+    return question_tokenized, attention_mask, head_id, tail_onehot
 
-def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epochs, embedding_dim, hidden_dim, relation_dim, use_cuda = True,patience = 10, freeze = 0, validate_every = 4, hops = 1, lr = 0.0005, entdrop=0.1, reldrop = 0.2, scoredrop=0.3, l3_reg = 0.0, model_name='DistMult', decay=1.0, ls=0.0, load_from='', outfile = 'best_score_model', do_batch_norm = True, que_embedding_model = 'RoBERTa', valid_data_path=None, test_data_path=None):
-    webqsp_checkpoint_folder = f"./checkpoints/"
+
+def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epochs, embedding_dim, hidden_dim,
+                       relation_dim, use_cuda=True, patience=10, freeze=0, validate_every=4, hops=1, lr=0.0005,
+                       entdrop=0.1, reldrop=0.2, scoredrop=0.3, l3_reg=0.0, model_name='DistMult', decay=1.0, ls=0.0,
+                       load_from='', outfile='best_score_model', do_batch_norm=True, que_embedding_model='RoBERTa',
+                       valid_data_path=None, test_data_path=None):
+    webqsp_checkpoint_folder = f"../../checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/"
     if not os.path.exists(webqsp_checkpoint_folder):
         os.makedirs(webqsp_checkpoint_folder)
-    
+
     print('Loading entities and relations')
     kg_type = 'full'
     # if 'half' in hops:
     #     kg_type = 'half'
-    
+
     # checkpoint_file = f"../../pretrained_models/embeddings/{model_name}_fbwq_{kg_type}/checkpoint_best.pt"
     #
     # print('Loading kg embeddings from', checkpoint_file)
@@ -348,7 +363,7 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
     # kge_model.eval()
 
     # e = getEntityEmbeddings(model_name, kge_model, hops)
-    with open('/home/ubuntu/Capstone/data/MetaQA/raw/entities.dict', 'r') as f:
+    with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
         lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
         e = {key: node_embeddings[int(value)] for key, value in lines}
     print('Loaded entities and relations')
@@ -358,10 +373,13 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
     # word2ix,idx2word, max_len = get_vocab(data)
     # hops = str(num_hops)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = RelationExtractor(embedding_dim=embedding_dim, num_entities = len(idx2entity), relation_dim=relation_dim, pretrained_embeddings=embedding_matrix, freeze=freeze, device=device, entdrop = entdrop, reldrop = reldrop, scoredrop = scoredrop, l3_reg = l3_reg, model = model_name, que_embedding_model=que_embedding_model, ls = ls, do_batch_norm=do_batch_norm)
+    model = RelationExtractor(embedding_dim=embedding_dim, num_entities=len(idx2entity), relation_dim=relation_dim,
+                              pretrained_embeddings=embedding_matrix, freeze=freeze, device=device, entdrop=entdrop,
+                              reldrop=reldrop, scoredrop=scoredrop, l3_reg=l3_reg, model=model_name,
+                              que_embedding_model=que_embedding_model, ls=ls, do_batch_norm=do_batch_norm)
 
     # time.sleep(10)
-    if mode=='train':
+    if mode == 'train':
         data = process_text_file(data_path)
         dataset = DatasetWebQSP(data, e, entity2idx, que_embedding_model)
 
@@ -374,7 +392,7 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
 
         if load_from != '':
             # model.load_state_dict(torch.load("checkpoints/roberta_finetune/" + load_from + ".pt"))
-            fname = f"checkpoints/{load_from}.pt"
+            fname = f"checkpoints/{que_embedding_model}_finetune/{load_from}.pt"
             model.load_state_dict(torch.load(fname, map_location=lambda storage, loc: storage))
         model.to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -399,67 +417,75 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
                         question_tokenized = a[0].to(device)
                         attention_mask = a[1].to(device)
                         positive_head = a[2].to(device)
-                        positive_tail = a[3].to(device)    
-                        loss = model(question_tokenized=question_tokenized, attention_mask=attention_mask, p_head=positive_head, p_tail=positive_tail)
+                        positive_tail = a[3].to(device)
+                        loss = model(question_tokenized=question_tokenized, attention_mask=attention_mask,
+                                     p_head=positive_head, p_tail=positive_tail)
                         loss.backward()
                         optimizer.step()
                         running_loss += loss.item()
-                        loader.set_postfix(Loss=running_loss/((i_batch+1)*batch_size), Epoch=epoch)
+                        loader.set_postfix(Loss=running_loss / ((i_batch + 1) * batch_size), Epoch=epoch)
                         loader.set_description('{}/{}'.format(epoch, nb_epochs))
                         loader.update()
 
                     scheduler.step()
 
-                elif phase=='valid':
+                elif phase == 'valid':
                     model.eval()
                     eps = 0.0001
-                    answers, score = test(model=model, data_path= valid_data_path, entity2idx=entity2idx, dataloader=dataset, device=device, model_name=model_name, return_hits_at_k=False)
+                    answers, score = test(model=model, data_path=valid_data_path, entity2idx=entity2idx,
+                                          dataloader=dataset, device=device, model_name=model_name,
+                                          return_hits_at_k=False)
                     if score > best_score + eps:
                         best_score = score
                         no_update = 0
                         best_model = model.state_dict()
-                        print(str(hops) + " hop Validation accuracy (no relation scoring) increased from previous epoch", score)
-                        writeToFile(answers, '/home/ubuntu/capstone/code/Negative Sampling Implementation/results/a_best_score_model.txt')
-                        
-
-                        torch.save(best_model, get_chkpt_path())
+                        print(
+                            str(hops) + " hop Validation accuracy (no relation scoring) increased from previous epoch",
+                            score)
+                        writeToFile(answers,
+                                    '/home/ubuntu/capstone/code/Negative Sampling Implementation/results/DistMult_RoBERTa_best_score_model.txt')
+                        torch.save(best_model, get_chkpt_path(model_name, que_embedding_model, outfile))
                     elif (score < best_score + eps) and (no_update < patience):
-                        no_update +=1
-                        print("Validation accuracy decreases to %f from %f, %d more epoch to check"%(score, best_score, patience-no_update))
+                        no_update += 1
+                        print("Validation accuracy decreases to %f from %f, %d more epoch to check" % (
+                        score, best_score, patience - no_update))
                     elif no_update == patience:
                         print("Model has exceed patience. Saving best model and exiting")
-                        torch.save(best_model, get_chkpt_path())
+                        torch.save(best_model, get_chkpt_path(model_name, que_embedding_model, outfile))
                         exit(0)
-                    if epoch == nb_epochs-1:
+                    if epoch == nb_epochs - 1:
                         print("Final Epoch has reached. Stoping and saving model.")
-                        torch.save(best_model, get_chkpt_path())
+                        torch.save(best_model, get_chkpt_path(model_name, que_embedding_model, outfile))
                         exit()
                     # torch.save(model.state_dict(), "checkpoints/roberta_finetune/"+str(epoch)+".pt")
-                    # torch.save(model.state_dict(), "checkpoints/roberta_finetune/x.pt")   
-    
-    elif mode=='test':
+                    # torch.save(model.state_dict(), "checkpoints/roberta_finetune/x.pt")
+
+    elif mode == 'test':
         data = process_text_file(test_data_path)
         dataset = DatasetWebQSP(data, e, entity2idx, que_embedding_model, model_name)
-        model_chkpt_file_path = get_chkpt_path()
+        model_chkpt_file_path = get_chkpt_path(model_name, que_embedding_model, outfile)
         model.load_state_dict(torch.load(model_chkpt_file_path, map_location=lambda storage, loc: storage))
         model.to(device)
         for parameter in model.parameters():
             parameter.requires_grad = False
         model.eval()
-        answers, accuracy, hits_at_1, hits_at_5, hits_at_10 = test(model=model, data_path= test_data_path, entity2idx=entity2idx, dataloader=dataset, device=device, model_name=model_name, return_hits_at_k=True)
+        answers, accuracy, hits_at_1, hits_at_5, hits_at_10 = test(model=model, data_path=test_data_path,
+                                                                   entity2idx=entity2idx, dataloader=dataset,
+                                                                   device=device, model_name=model_name,
+                                                                   return_hits_at_k=True)
 
         d = {
             'KG-Model': model_name,
             'KG-Type': kg_type,
             'Que-Embedding-Model': que_embedding_model,
-            'Accuracy': [accuracy], 
+            'Accuracy': [accuracy],
             'Hits@1': [hits_at_1],
             'Hits@5': [hits_at_5],
             'Hits@10': [hits_at_10]
-            }
+        }
         df = pd.DataFrame(data=d)
         df.to_csv(f"final_results.csv", mode='a', index=False, header=False)
-                
+
 
 def process_text_file(text_file, split=False):
     data_file = open(text_file, 'r')
@@ -477,10 +503,10 @@ def process_text_file(text_file, split=False):
         question_2 = question[1].split(']')
         head = question_2[0].strip()
         question_2 = question_2[1]
-        question = question_1+'NE'+question_2
+        question = question_1 + 'NE' + question_2
         ans = data_line[1].split('|')
         data_array.append([head, question.strip(), ans])
-    if split==False:
+    if split == False:
         return data_array
     else:
         data = []
@@ -492,6 +518,7 @@ def process_text_file(text_file, split=False):
                 data.append([head, question, tail])
         return data
 
+
 def data_generator(data, dataloader, entity2idx):
     for i in range(len(data)):
         data_sample = data[i]
@@ -501,7 +528,7 @@ def data_generator(data, dataloader, entity2idx):
         if type(data_sample[2]) is str:
             ans = entity2idx[data_sample[2]]
         else:
-            #TODO: not sure if this is the right way
+            # TODO: not sure if this is the right way
             ans = []
             for entity in list(data_sample[2]):
                 if entity.strip() in entity2idx:
@@ -509,8 +536,6 @@ def data_generator(data, dataloader, entity2idx):
             # ans = [entity2idx[entity.strip()] for entity in list(data_sample[2])]
 
         yield torch.tensor(head, dtype=torch.long), question_tokenized, attention_mask, ans, data_sample[1]
-
-
 
 
 hops = 1
@@ -522,31 +547,29 @@ hops = 1
 #     valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_1hop.txt'
 #     test_data_path = '../../data/QA_data/WebQuestionsSP/qa_test_webqsp.txt'
 
-if hops ==1 :
-    data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_train_1hop.txt'
-    valid_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_dev_1hop.txt'
-    test_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_test_1hop.txt'
+if hops == 1:
+    data_path = '/home/ubuntu/capstone/data/MetaQA/qa_train_1hop.txt'
+    valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_1hop.txt'
+    test_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_test_1hop.txt'
 
-elif hops ==2:
-    data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_train_2hop.txt'
-    valid_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_dev_2hop.txt'
-    test_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_test_2hop.txt'
+elif hops == 2:
+    data_path = '/home/ubuntu/capstone/data/MetaQA/qa_train_2hop.txt'
+    valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_2hop.txt'
+    test_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_test_2hop.txt'
 
 else:
-    data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_train_3hop.txt'
-    valid_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_dev_3hop.txt'
-    test_data_path = '/home/ubuntu/Capstone/data/QA_data/MetaQA/qa_test_3hop.txt'
-
-
+    data_path = '/home/ubuntu/capstone/data/MetaQA/qa_train_3hop.txt'
+    valid_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_dev_3hop.txt'
+    test_data_path = '/home/ubuntu/capstone/data/MetaQA/qa_test_3hop.txt'
 
 perform_experiment(
-    data_path= data_path,
-    mode= "train",
-    batch_size= 160,
+    data_path=data_path,
+    mode="train",
+    batch_size=160,
     shuffle=True,
-    num_workers= 1,
-    nb_epochs= 1,
-    embedding_dim= 256,
+    num_workers=1,
+    nb_epochs=1,
+    embedding_dim=256,
     hidden_dim=50,
     relation_dim=50,
     valid_data_path=valid_data_path,
@@ -558,9 +581,9 @@ perform_experiment(
     lr=0.0005,
     entdrop=0.1,
     reldrop=0.2,
-    scoredrop = 0.3,
-    l3_reg = 0.0,
-    model_name= 'DistMult',
+    scoredrop=0.3,
+    l3_reg=0.0,
+    model_name='DistMult',
     decay=1.0,
     ls=0.0,
     load_from='',
