@@ -21,8 +21,8 @@ model_map = {
     'rotate': RotatE
 
 }
-# model_name = 'complex'
-model_name  = 'distmult'
+model_name = 'complex'
+# model_name  = 'distmult'
 # model_name = 'rotate'
 
 # parser = argparse.ArgumentParser()
@@ -149,6 +149,8 @@ print(f'Test Mean Rank: {rank:.2f}, Test MRR: {mrr:.4f}, '
 
 
 node_embeddings = model.node_emb.weight
+# node_embeddings = model.node_emb.weight
+
 # edge_embeddings = model.edge_emb.weight
 # with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
 #     lines = [row.split('\t') for row in f.read().split('\n')[:-1]]

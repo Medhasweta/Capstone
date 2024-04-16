@@ -323,8 +323,8 @@ def set_bn_eval(m):
 #     return e
 
 def get_chkpt_path(model_name, que_embedding_model, outfile):
-    return f"../../checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/best_score_model.pt"
-
+    return f"/home/ubuntu/capstone/code/Negative Sampling Implementation/checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/best_score_model.pt"
+# /home/ubuntu/capstone/code/Negative Sampling Implementation/checkpoints/WebQSP/ComplEx_SentenceTransformer_best_score_model
 
 def custom_collate_fn(batch):
     print(len(batch))
@@ -343,8 +343,8 @@ def custom_collate_fn(batch):
 
 def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epochs, embedding_dim, hidden_dim,
                        relation_dim, use_cuda=True, patience=10, freeze=0, validate_every=4, hops=1, lr=0.0005,
-                       entdrop=0.1, reldrop=0.2, scoredrop=0.3, l3_reg=0.0, model_name='DistMult', decay=1.0, ls=0.0,
-                       load_from='', outfile='best_score_model', do_batch_norm=True, que_embedding_model='RoBERTa',
+                       entdrop=0.1, reldrop=0.2, scoredrop=0.3, l3_reg=0.0, model_name='ComplEx', decay=1.0, ls=0.0,
+                       load_from='', outfile='best_score_model', do_batch_norm=True, que_embedding_model='SentenceTransformer',
                        valid_data_path=None, test_data_path=None):
     # webqsp_checkpoint_folder = f"../../checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/"
     # if not os.path.exists(webqsp_checkpoint_folder):
@@ -443,7 +443,7 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
                             str(hops) + " hop Validation accuracy (no relation scoring) increased from previous epoch",
                             score)
                         writeToFile(answers,
-                                    '/home/ubuntu/capstone/code/Negative Sampling Implementation/results/DistMult_RoBERTa_best_score_model.txt')
+                                    '/home/ubuntu/capstone/code/Negative Sampling Implementation/results/ComplEx_SentenceTransformer_best_score_model.txt')
                         torch.save(best_model, get_chkpt_path(model_name, que_embedding_model, outfile))
                     elif (score < best_score + eps) and (no_update < patience):
                         no_update += 1
@@ -462,7 +462,7 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
 
     elif mode == 'test':
         data = process_text_file(test_data_path)
-        dataset = DatasetWebQSP(data, e, entity2idx, que_embedding_model, model_name)
+        dataset = DatasetWebQSP(data, e, entity2idx, que_embedding_model)
         model_chkpt_file_path = get_chkpt_path(model_name, que_embedding_model, outfile)
         model.load_state_dict(torch.load(model_chkpt_file_path, map_location=lambda storage, loc: storage))
         model.to(device)
@@ -484,6 +484,7 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
             'Hits@10': [hits_at_10]
         }
         df = pd.DataFrame(data=d)
+        print(df)
         df.to_csv(f"final_results.csv", mode='a', index=False, header=False)
 
 
@@ -571,7 +572,7 @@ perform_experiment(
     nb_epochs=1,
     embedding_dim=256,
     hidden_dim=50,
-    relation_dim=50,
+    relation_dim=25,
     valid_data_path=valid_data_path,
     test_data_path=test_data_path,
     patience=10,
@@ -583,11 +584,11 @@ perform_experiment(
     reldrop=0.2,
     scoredrop=0.3,
     l3_reg=0.0,
-    model_name='DistMult',
+    model_name='ComplEx',
     decay=1.0,
     ls=0.0,
     load_from='',
     outfile='best_score_model',
     do_batch_norm=True,
-    que_embedding_model='RoBERTa'
+    que_embedding_model='SentenceTransformer'
 )

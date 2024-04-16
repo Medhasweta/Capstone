@@ -212,6 +212,11 @@ class RelationExtractor(nn.Module):
         re_relation, im_relation = torch.chunk(relation, 2, dim=1)
         re_tail, im_tail = torch.chunk(self.embedding.weight, 2, dim =1)
 
+        print("re_head shape:", re_head.shape)
+        print("im_head shape:", im_head.shape)
+        print("re_relation shape:", re_relation.shape)
+        print("im_relation shape:", im_relation.shape)
+
         re_score = re_head * re_relation - im_head * im_relation
         im_score = re_head * im_relation + im_head * re_relation
 
