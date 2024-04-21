@@ -50,7 +50,7 @@ model_arg_map = {'rotate': {'margin': 9.0}}
 model = model_map[model_name](
     num_nodes=data.num_entities,
     num_relations=data.num_relations,
-    hidden_channels=50,
+    hidden_channels=256,
     **model_arg_map.get(model_name, {}),
 ).to(device)
 
@@ -111,7 +111,7 @@ def testing(data):
     )
 
 #
-for epoch in range(1, 5):
+for epoch in range(0, 5):
     loss = train()
     print(f'Epoch: {epoch:03d}, Loss: {loss:.4f}')
     if epoch % 25 == 0:
@@ -149,12 +149,22 @@ print(f'Test Mean Rank: {rank:.2f}, Test MRR: {mrr:.4f}, '
 
 
 node_embeddings = model.node_emb.weight
-# node_embeddings = model.node_emb.weight
+node_embed =  model.node_emb_im.weight
+# node_embeddings = model.mnode_emb.weight
 
 # edge_embeddings = model.edge_emb.weight
 # with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
 #     lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
-#     entities_dict = {key: node_embeddings[int(value)] for key, value in lines}
+#     entities_dict1 = {key: node_embeddings[int(value)] for key, value in lines}
+#     entities_dict2 = {key: node_embed[int(value)] for key, value in lines}
+#
+# # Assuming entities_dict1 and entities_dict2 are defined as shown
+# entities_dict =  {
+#     key: torch.cat((entities_dict1[key], entities_dict2[key]), dim=0)
+#     for key in entities_dict1
+# }
+
+
 #
 # print(entities_dict['yakuza'])
 # import pickle

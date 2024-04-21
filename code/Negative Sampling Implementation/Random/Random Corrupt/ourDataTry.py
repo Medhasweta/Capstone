@@ -9,6 +9,7 @@ from random_corrupt_rotate import RotatE
 # from torch_geometric.datasets import FB15k_237
 
 
+
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # FB15k_dset = MetaQADataset(root='packageData')
@@ -23,9 +24,9 @@ model_map = {
     'rotate': RotatE
 
 }
-# model_name = 'complex'
+model_name = 'complex'
 # model_name  = 'distmult'
-model_name = 'rotate'
+# model_name = 'rotate'
 
 # parser = argparse.ArgumentParser()
 # parser.add_argument('--model', choices=model_map.keys(), type=str.lower,
@@ -52,7 +53,7 @@ model_arg_map = {'rotate': {'margin': 9.0}}
 model = model_map[model_name](
     num_nodes=data.num_entities,
     num_relations=data.num_relations,
-    hidden_channels=50,
+    hidden_channels=100,
     **model_arg_map.get(model_name, {}),
 ).to(device)
 
@@ -141,10 +142,11 @@ import numpy as np
 # Assuming 'model' is your trained model instance
 # and it has been moved to 'cpu' for saving purposes
 
-# Extract embeddings from the model
-node_embeddings = model.state_dict()['node_emb.weight'].cpu().numpy()
-relation_embeddings = model.state_dict()['rel_emb.weight'].cpu().numpy()
-
-# Save the embeddings as .npy files
-np.save('E.npy', node_embeddings)
-np.save('R.npy', relation_embeddings)
+# # Extract embeddings from the model
+# node_embeddings = model.state_dict()['node_emb.weight'].cpu().numpy()
+# relation_embeddings = model.state_dict()['rel_emb.weight'].cpu().numpy()
+#
+# # Save the embeddings as .npy files
+# np.save('E.npy', node_embeddings)
+# np.save('R.npy', relation_embeddings)
+node_embeddings = model.node_emb.weight

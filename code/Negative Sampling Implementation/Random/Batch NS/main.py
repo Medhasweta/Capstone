@@ -17,7 +17,7 @@ import sys
 import pandas as pd
 
 sys.path.append("../..")  # Adds higher directory to python modules path.
-from ourDataTry import node_embeddings,node_embed, model
+from ourDataTry import node_embeddings
 # from kge.model import KgeModel
 # from kge.util.io import load_checkpoint
 from torch.nn.utils.rnn import pad_sequence
@@ -343,8 +343,8 @@ def custom_collate_fn(batch):
 
 def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epochs, embedding_dim, hidden_dim,
                        relation_dim, use_cuda=True, patience=10, freeze=0, validate_every=4, hops=1, lr=0.0005,
-                       entdrop=0.1, reldrop=0.2, scoredrop=0.3, l3_reg=0.0, model_name='ComplEx', decay=1.0, ls=0.0,
-                       load_from='', outfile='best_score_model', do_batch_norm=True, que_embedding_model='RoBERTa',
+                       entdrop=0.1, reldrop=0.2, scoredrop=0.3, l3_reg=0.0, model_name='DistMult', decay=1.0, ls=0.0,
+                       load_from='', outfile='best_score_model', do_batch_norm=True, que_embedding_model='SentenceTransformer',
                        valid_data_path=None, test_data_path=None):
     # webqsp_checkpoint_folder = f"../../checkpoints/WebQSP/{model_name}_{que_embedding_model}_{outfile}/"
     # if not os.path.exists(webqsp_checkpoint_folder):
@@ -365,12 +365,7 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
     # e = getEntityEmbeddings(model_name, kge_model, hops)
     with open('/home/ubuntu/capstone/data/MetaQA/raw/entities.dict', 'r') as f:
         lines = [row.split('\t') for row in f.read().split('\n')[:-1]]
-        entities_dict1 = {key: node_embeddings[int(value)] for key, value in lines}
-        entities_dict2 = {key: node_embed[int(value)] for key, value in lines}
-    e = {
-    key: torch.cat((entities_dict1[key], entities_dict2[key]), dim=0)
-    for key in entities_dict1
-    }
+        e = {key: node_embeddings[int(value)] for key, value in lines}
     print('Loaded entities and relations')
 
     entity2idx, idx2entity, embedding_matrix = prepare_embeddings(e)
@@ -448,7 +443,7 @@ def perform_experiment(data_path, mode, batch_size, shuffle, num_workers, nb_epo
                             str(hops) + " hop Validation accuracy (no relation scoring) increased from previous epoch",
                             score)
                         writeToFile(answers,
-                                    '/home/ubuntu/capstone/code/Negative Sampling Implementation/results/ComplEx_RoBERTa_best_score_model.txt')
+                                    '/home/ubuntu/capstone/code/Negative Sampling Implementation/results/DistMult_SentenceTransformer_best_score_model.txt')
                         torch.save(best_model, get_chkpt_path(model_name, que_embedding_model, outfile))
                     elif (score < best_score + eps) and (no_update < patience):
                         no_update += 1
@@ -570,18 +565,18 @@ else:
 
 perform_experiment(
     data_path=data_path,
-    mode="train",
-    batch_size=100,
+    mode="test",
+    batch_size=160,
     shuffle=True,
     num_workers=1,
-    nb_epochs=50,
+    nb_epochs=1,
     embedding_dim=256,
-    hidden_dim=512,
-    relation_dim=256,
+    hidden_dim=50,
+    relation_dim=50,
     valid_data_path=valid_data_path,
     test_data_path=test_data_path,
-    patience=50,
-    validate_every=25,
+    patience=10,
+    validate_every=1,
     freeze=0,
     hops=1,
     lr=0.0005,
@@ -589,11 +584,11 @@ perform_experiment(
     reldrop=0.2,
     scoredrop=0.3,
     l3_reg=0.0,
-    model_name='ComplEx',
+    model_name='DistMult',
     decay=1.0,
     ls=0.0,
     load_from='',
     outfile='best_score_model',
     do_batch_norm=True,
-    que_embedding_model='RoBERTa'
+    que_embedding_model='SentenceTransformer'
 )
