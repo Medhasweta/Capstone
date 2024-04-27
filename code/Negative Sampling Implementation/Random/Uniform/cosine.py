@@ -5,6 +5,7 @@ import os
 from Readourdata import MetaQADataset
 
 
+<<<<<<< Updated upstream
 # # print(os.getcwd())
 # class MetaQADataset(torch_geometric.data.InMemoryDataset):
 #     r"""FB15-237 dataset from Freebase.
@@ -88,6 +89,19 @@ print(f'The graph has a total of {data.num_entities} entities and {data.num_rela
 print(f'The train split has {data.train_edge_type.size()[0]} relation triples.') # The train split has 133582 relation triples.
 print(f'The valid split has {data.valid_edge_type.size()[0]} relation triples.') # The valid split has 4052 relation triples.
 print(f'The test split has {data.test_edge_type.size()[0]} relation triples.') # The test split has 4053 relation triples.
+=======
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+
+FB15k_dset = MetaQADataset(root='/Users/yoninayoni/Documents/GitHub/Capstone/data/MetaQA')
+data = FB15k_dset[0].to(device)
+
+# print(f'The graph has a total of {data.num_entities} entities and {data.num_relations} relations.') #43234
+# print(f'The train split has {data.train_edge_type.size()[0]} relation triples.') # The train split has 133582 relation triples.
+# print(f'The valid split has {data.valid_edge_type.size()[0]} relation triples.') # The valid split has 4052 relation triples.
+# print(f'The test split has {data.test_edge_type.size()[0]} relation triples.') # The test split has 4053 relation triples.
+
+>>>>>>> Stashed changes
 
 
 
