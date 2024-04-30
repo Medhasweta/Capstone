@@ -2,24 +2,23 @@
 
 ## Our Wonderful Project
 
-**Authors:**
-- Medhasweta Sen 
+Welcome to "Our Wonderful Project"! This project delves into enhancing Question Answering systems using Knowledge Graphs (KGs). By integrating these graphs with advanced machine learning models, we aim to improve the accuracy and efficiency of systems that answer complex questions.
+
+### Authors
+- Medhasweta Sen
 - Nina Ebensperger
 - Nayaeun Kwon
 
-**Supervised By:**
+### Supervised By
 - Dr. Amir Jafari
 
 ---
 
-## Abstract
+## Project Overview
 
-This project investigates the impact of negative sampling on Knowledge Graph Embeddings (KGEs) for Knowledge Graph Question Answering (KGQA) systems. By experimenting with different negative sampling techniques and KGE models like DistMult and ComplEx, the study assesses their effects on KGQA performance across several benchmark knowledge graphs. The results reveal crucial insights into how negative sampling influences the efficacy of KGQA systems, thereby guiding the optimization of these systems for better performance in real-world applications.
+**Abstract**: This project investigates the impact of negative sampling on Knowledge Graph Embeddings (KGEs) for Knowledge Graph Question Answering (KGQA) systems. We explore various negative sampling techniques and KGE models like DistMult and ComplEx, assessing their effects across several knowledge graph benchmarks.
 
----
-
-## Table of Contents
-
+### Table of Contents
 - [Introduction](#introduction)
 - [Related Work](#related-work)
 - [Knowledge Graphs and Knowledge Graph Embeddings](#knowledge-graphs-and-knowledge-embeddings)
@@ -32,7 +31,10 @@ This project investigates the impact of negative sampling on Knowledge Graph Emb
 
 ## Introduction
 
-This section introduces Knowledge Graph Question Answering (KGQA), focusing on its integration with Large Language Models (LLMs) to improve accuracy and efficiency in answering natural language questions. The enhancements include using LLMs for extracting entities/relations and reasoning answers directly from the knowledge graphs.
+**Challenges Addressed**:
+- **Complex Queries**: Enhancing the ability of systems to understand and process complex queries by leveraging the structured relationships stored in Knowledge Graphs.
+- **Sparse Data**: Improving system robustness in handling sparse data areas within databases, which are typically challenging for traditional methods.
+
 
 ![General Framework of LLMs for KGQA](https://miro.medium.com/v2/resize:fit:1086/format:webp/1*JSHShzlkC_pAMpI-U4VKIg.png)
 
@@ -41,7 +43,29 @@ This section introduces Knowledge Graph Question Answering (KGQA), focusing on i
 
 ## Related Work
 
-This section explores significant advancements in KGQA, particularly the evolution of Knowledge Graph Embeddings (KGEs) computation techniques such as ComplEx and DistMult, and their application in enhancing question answering over knowledge graphs.
+The development of Knowledge Graph Question Answering (KGQA) systems has significantly advanced with the integration of Knowledge Graph Embeddings (KGEs) and Large Language Models (LLMs). This section reviews notable methodologies and models that have shaped the current landscape of KGQA, particularly focusing on their application in enhancing the effectiveness and accuracy of question answering over knowledge graphs.
+
+### Knowledge Graph Embeddings Computation
+
+#### ComplEx
+Introduced by Trouillon et al. (2016), the ComplEx model employs complex-valued embeddings to handle both symmetric and antisymmetric relations effectively within knowledge graphs. This model is renowned for its use of complex numbers to enrich the representation of entities and relations, thereby allowing for the effective capture of intricate relational patterns. The ComplEx model is distinguished by its use of the Hermitian dot product to calculate the interaction between embeddings, offering a robust method for link prediction that has shown superior performance on benchmarks like FB15K and WN18 ([Trouillon et al., 2016](https://arxiv.org/abs/1606.06357)).
+
+#### DistMult
+The DistMult model from Yang et al. (2015) simplifies the embedding process by utilizing real-valued vectors to represent entities and relations, making it highly efficient for large-scale knowledge bases. DistMult applies a diagonal matrix to model relations within its bilinear scoring function, which has been effective in tasks such as link prediction and rule mining. This model's ability to generalize several existing embedding models highlights its utility in enhancing scalability and interpretability within KGQA systems ([Yang et al., 2015](https://arxiv.org/abs/1412.6575)).
+
+### Question Answering over Knowledge Graphs
+
+The evolution of KGQA has been marked by a shift from basic embedding models to more sophisticated, multi-dimensional approaches that accommodate complex, multi-hop queries. Early systems relied on models like TransE, which, while effective in simplifying entities and relations, often struggled with the complexity of multi-hop question answering due to their limited relational path encapsulation capabilities.
+
+Significant enhancements in KGQA include the integration of complex vector space embeddings like ComplEx, which enable dynamic interpretation and linking of relational entities. Further advancements have incorporated methods for extracting sub-graphs from knowledge graphs, reducing computational overhead and improving accuracy by focusing on relevant graph sections.
+
+#### Embed-KGQA Model
+The Embed-KGQA model, as detailed by Saxena et al. (2020), represents a synthesis of these advancements, incorporating complex embeddings and neural techniques to enhance question answering capabilities. This model employs a structured pipeline consisting of a KG Embedding Module, a Question Embedding Module, and an Answer Selection Module, each designed to optimize the accuracy and efficiency of KGQA systems on extensive knowledge bases.
+
+### Future Directions
+While current advancements have significantly improved KGQA systems, challenges in scalability and adaptability remain. Future research may explore more adaptive models that update embeddings in real-time and integrate more detailed linguistic features to refine accuracy further.
+
+For detailed insights and references, please consult the works of [Trouillon et al., 2016](https://arxiv.org/abs/1606.06357), [Yang et al., 2015](https://arxiv.org/abs/1412.6575), and [Saxena et al., 2020](https://aclanthology.org/2020.acl-main.412).
 
 ---
 
