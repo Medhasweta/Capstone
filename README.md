@@ -94,7 +94,23 @@ This study highlights the pivotal role of negative sampling in enhancing the per
 **Dataset:** [Access the dataset here](link-to-dataset)
 
 **References:**
-1. List of cited papers and sources
+1. Pan, S., Luo, L., Wang, Y., Chen, C., Wang, J., & Wu, X. (2023). Unifying Large Language Models and Knowledge Graphs: A Roadmap. *arXiv preprint arXiv:2306.08302*. [Access here](https://api.semanticscholar.org/CorpusID:259165563).
+2. Saxena, A., Tripathi, A., & Talukdar, P. (2020). Improving Multi-hop Question Answering over Knowledge Graphs using Knowledge Base Embeddings. *Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics*. [Access here](https://aclanthology.org/2020.acl-main.412).
+3. Rao, D. J., Mane, S. S., & Paliwal, M. A. (2022). Biomedical Multi-hop Question Answering Using Knowledge Graph Embeddings and Language Models. *arXiv preprint arXiv:2211.05351*.
+4. Yang, B., Yih, W., He, X., Gao, J., & Deng, L. (2015). Embedding Entities and Relations for Learning and Inference in Knowledge Bases. *arXiv preprint arXiv:1412.6575*.
+5. Bordes, A., Usunier, N., Garcia-Duran, A., Weston, J., & Yakhnenko, O. (2013). Translating Embeddings for Modeling Multi-relational Data. *Neural Information Processing Systems*.
+6. Sun, Z., Deng, Z., Nie, J., & Tang, J. (2019). RotatE: Knowledge Graph Embedding by Relational Rotation in Complex Space. *arXiv preprint arXiv:1902.10197*.
+7. Yang, M., Lee, D., Park, S., & Rim, H. (2015). Knowledge-based Question Answering Using the Semantic Embedding Space. *Expert Systems with Applications*, 42, 9086-9104. [DOI](10.1016/j.eswa.2015.07.009).
+8. Bao, J., Duan, N., Yan, Z., Zhou, M., & Zhao, T. (2016). Constraint-Based Question Answering with Knowledge Graph. *Proceedings of COLING 2016, the 26th International Conference on Computational Linguistics: Technical Papers*, 2503–2514. [Access here](https://aclanthology.org/C16-1236).
+9. Trouillon, T., Welbl, J., Riedel, S., Gaussier, É., & Bouchard, G. (2016). Complex Embeddings for Simple Link Prediction. *arXiv preprint arXiv:1606.06357*.
+10. Bordes, A., Usunier, N., Garcia-Duran, A., Weston, J., & Yakhnenko, O. (2013). Translating Embeddings for Modeling Multi-relational Data. *Advances in Neural Information Processing Systems*.
+11. Sun, H., Dhingra, B., Wang, M., Mazaitis, K., Salakhutdinov, R., & Cohen, W. W. (2018). Open Domain Question Answering Using Early Fusion of Knowledge Bases and Text. *arXiv preprint arXiv:1809.00782*.
+12. Sun, H., Bedrax-Weiss, T., & Cohen, W. W. (2019). PullNet: Open Domain Question Answering with Iterative Retrieval on Knowledge Bases and Text. *arXiv preprint arXiv:1904.09537*.
+13. Madushanka, T., & Ichise, R. (2024). Negative Sampling in Knowledge Graph Representation Learning: A Review. *arXiv preprint arXiv:2402.19195*.
+14. Ganesan, B., Ravikumar, A., Piplani, L., Bhaumurk, R., Padmanaban, D., Narasimhamurthy, S., Adhikary, C., & Deshapogu, S. (2024). Automated Answer Validation using Text Similarity. *arXiv preprint arXiv:2401.08688*.
+15. Yih, W., Chang, M., He, X., & Gao, J. (2015). Semantic Parsing for Single-Relation Question Answering. *Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics*, 643–648. [Access here](https://aclanthology.org/).
+16. Zhang, Y., Dai, H., Kozareva, Z., Smola, A., & Song, L. (2017). Variational Reasoning for Question Answering With Knowledge Graph. *Proceedings of the AAAI Conference on Artificial Intelligence*, 32(1).
+17. Murtagh, F., & Legendre, P. (2014). Ward’s Hierarchical Agglomerative Clustering Method: Which Algorithms Implement Ward’s Criterion? *Journal of Classification*, 31(3), 274–295. [DOI](10.1007/s00357-014-9161-z).
 
 ---
 
