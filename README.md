@@ -36,6 +36,7 @@ This project delves into enhancing Question Answering systems using Knowledge Gr
 
 ![General Framework of LLMs for KGQA](https://miro.medium.com/v2/resize:fit:1086/format:webp/1*JSHShzlkC_pAMpI-U4VKIg.png)
 
+*Figure: General Framework of LLMs for KGQA - adapted from Pan, S., Luo, L., Wang, Y., Chen, C., Wang, J., & Wu, X. (2023). "Unifying Large Language Models and Knowledge Graphs: A Roadmap." arXiv preprint arXiv:2306.08302.* [Access here](https://arxiv.org/abs/2306.08302
 
 ---
 
@@ -91,7 +92,11 @@ Negative sampling is essential in KGE training, helping models learn to distingu
 
 For a deeper understanding, refer to the works of [Pan et al., 2023](https://example.com/pan2023), [Madushanka and Ichise, 2024](https://example.com/madushanka2024), and other leading researchers in the field.
 
+
 ![Examples of KG Categories](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*fKqdqCMI9UQz0YX291IVIw.png)
+
+*Figure: Examples of Knowledge Graph Categories - adapted from Pan, S., Luo, L., Wang, Y., Chen, C., Wang, J., & Wu, X. (2023). "Unifying Large Language Models and Knowledge Graphs: A Roadmap." arXiv preprint arXiv:2306.08302.* [Access here](https://arxiv.org/abs/2306.08302).
+
 
 ---
 
