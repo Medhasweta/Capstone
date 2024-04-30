@@ -159,7 +159,7 @@ This study highlights the pivotal role of negative sampling in enhancing the per
 
 ---
 
-**Video Demonstration:** [Click here to watch]((https://drive.google.com/file/d/1iGQIY6rx7LpiDxoI0BDY2RzK03k5vArc/view?usp=sharing))
+**Video Demonstration:** [Click here to watch](https://drive.google.com/file/d/1iGQIY6rx7LpiDxoI0BDY2RzK03k5vArc/view?usp=sharing)
 
 **Dataset:** [Access the dataset here](https://drive.google.com/drive/folders/1IVUUoo_cvmLJBWSl4BOln8YL4VoMC9LM?usp=sharing)
 
