@@ -8,7 +8,7 @@
 - Nayaeun Kwon
 
 **Supervised By:**
-- Amir Jafari
+- Dr. Amir Jafari
 
 ---
 
@@ -34,7 +34,8 @@ This project investigates the impact of negative sampling on Knowledge Graph Emb
 
 This section introduces Knowledge Graph Question Answering (KGQA), focusing on its integration with Large Language Models (LLMs) to improve accuracy and efficiency in answering natural language questions. The enhancements include using LLMs for extracting entities/relations and reasoning answers directly from the knowledge graphs.
 
-![General Framework of LLMs for KGQA](link-to-image)
+![General Framework of LLMs for KGQA](https://i.imgur.com/example.png)
+
 
 ---
 
