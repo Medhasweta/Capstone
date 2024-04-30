@@ -49,7 +49,7 @@ This section explores significant advancements in KGQA, particularly the evoluti
 
 Here, we detail the structure and types of Knowledge Graphs (KGs) and discuss the importance of KGEs in transforming KG data into a usable format for various machine learning tasks.
 
-![Examples of KG Categories](link-to-image)
+![Examples of KG Categories](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*fKqdqCMI9UQz0YX291IVIw.png)
 
 ---
 
