@@ -1,4 +1,4 @@
-# Data Science Program Capstone Report: Spring 2023
+# Data Science Program Capstone Report
 
 This project delves into enhancing Question Answering systems using Knowledge Graphs (KGs). By integrating these graphs with advanced machine learning models, we aim to improve the accuracy and efficiency of systems that answer complex questions.
 
