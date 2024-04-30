@@ -1,25 +1,22 @@
-# Data Science Program Capstone Report: Spring 2023
+# Data Science Program Capstone Report
 
-## Our Wonderful Project
+This project delves into enhancing Question Answering systems using Knowledge Graphs (KGs). By integrating these graphs with advanced machine learning models, we aim to improve the accuracy and efficiency of systems that answer complex questions.
 
-**Authors:**
-- Medhasweta Sen 
+### Authors
+- Medhasweta Sen
 - Nina Ebensperger
 - Nayaeun Kwon
 
-**Supervised By:**
+### Supervised By
 - Dr. Amir Jafari
 
 ---
 
-## Abstract
+## Project Overview
 
-This project investigates the impact of negative sampling on Knowledge Graph Embeddings (KGEs) for Knowledge Graph Question Answering (KGQA) systems. By experimenting with different negative sampling techniques and KGE models like DistMult and ComplEx, the study assesses their effects on KGQA performance across several benchmark knowledge graphs. The results reveal crucial insights into how negative sampling influences the efficacy of KGQA systems, thereby guiding the optimization of these systems for better performance in real-world applications.
+**Abstract**: This project investigates the impact of negative sampling on Knowledge Graph Embeddings (KGEs) for Knowledge Graph Question Answering (KGQA) systems. We explore various negative sampling techniques and KGE models like DistMult and ComplEx, assessing their effects across several knowledge graph benchmarks.
 
----
-
-## Table of Contents
-
+### Table of Contents
 - [Introduction](#introduction)
 - [Related Work](#related-work)
 - [Knowledge Graphs and Knowledge Graph Embeddings](#knowledge-graphs-and-knowledge-embeddings)
@@ -32,7 +29,10 @@ This project investigates the impact of negative sampling on Knowledge Graph Emb
 
 ## Introduction
 
-This section introduces Knowledge Graph Question Answering (KGQA), focusing on its integration with Large Language Models (LLMs) to improve accuracy and efficiency in answering natural language questions. The enhancements include using LLMs for extracting entities/relations and reasoning answers directly from the knowledge graphs.
+**Challenges Addressed**:
+- **Complex Queries**: Enhancing the ability of systems to understand and process complex queries by leveraging the structured relationships stored in Knowledge Graphs.
+- **Sparse Data**: Improving system robustness in handling sparse data areas within databases, which are typically challenging for traditional methods.
+
 
 ![General Framework of LLMs for KGQA](https://miro.medium.com/v2/resize:fit:1086/format:webp/1*JSHShzlkC_pAMpI-U4VKIg.png)
 
@@ -41,13 +41,55 @@ This section introduces Knowledge Graph Question Answering (KGQA), focusing on i
 
 ## Related Work
 
-This section explores significant advancements in KGQA, particularly the evolution of Knowledge Graph Embeddings (KGEs) computation techniques such as ComplEx and DistMult, and their application in enhancing question answering over knowledge graphs.
+The development of Knowledge Graph Question Answering (KGQA) systems has significantly advanced with the integration of Knowledge Graph Embeddings (KGEs) and Large Language Models (LLMs). This section reviews notable methodologies and models that have shaped the current landscape of KGQA, particularly focusing on their application in enhancing the effectiveness and accuracy of question answering over knowledge graphs.
+
+### Knowledge Graph Embeddings Computation
+
+#### ComplEx
+Introduced by Trouillon et al. (2016), the ComplEx model employs complex-valued embeddings to handle both symmetric and antisymmetric relations effectively within knowledge graphs. This model is renowned for its use of complex numbers to enrich the representation of entities and relations, thereby allowing for the effective capture of intricate relational patterns. The ComplEx model is distinguished by its use of the Hermitian dot product to calculate the interaction between embeddings, offering a robust method for link prediction that has shown superior performance on benchmarks like FB15K and WN18 ([Trouillon et al., 2016](https://arxiv.org/abs/1606.06357)).
+
+#### DistMult
+The DistMult model from Yang et al. (2015) simplifies the embedding process by utilizing real-valued vectors to represent entities and relations, making it highly efficient for large-scale knowledge bases. DistMult applies a diagonal matrix to model relations within its bilinear scoring function, which has been effective in tasks such as link prediction and rule mining. This model's ability to generalize several existing embedding models highlights its utility in enhancing scalability and interpretability within KGQA systems ([Yang et al., 2015](https://arxiv.org/abs/1412.6575)).
+
+### Question Answering over Knowledge Graphs
+
+The evolution of KGQA has been marked by a shift from basic embedding models to more sophisticated, multi-dimensional approaches that accommodate complex, multi-hop queries. Early systems relied on models like TransE, which, while effective in simplifying entities and relations, often struggled with the complexity of multi-hop question answering due to their limited relational path encapsulation capabilities.
+
+Significant enhancements in KGQA include the integration of complex vector space embeddings like ComplEx, which enable dynamic interpretation and linking of relational entities. Further advancements have incorporated methods for extracting sub-graphs from knowledge graphs, reducing computational overhead and improving accuracy by focusing on relevant graph sections.
+
+#### Embed-KGQA Model
+The Embed-KGQA model, as detailed by Saxena et al. (2020), represents a synthesis of these advancements, incorporating complex embeddings and neural techniques to enhance question answering capabilities. This model employs a structured pipeline consisting of a KG Embedding Module, a Question Embedding Module, and an Answer Selection Module, each designed to optimize the accuracy and efficiency of KGQA systems on extensive knowledge bases.
+
+### Future Directions
+While current advancements have significantly improved KGQA systems, challenges in scalability and adaptability remain. Future research may explore more adaptive models that update embeddings in real-time and integrate more detailed linguistic features to refine accuracy further.
+
+For detailed insights and references, please consult the works of [Trouillon et al., 2016](https://arxiv.org/abs/1606.06357), [Yang et al., 2015](https://arxiv.org/abs/1412.6575), and [Saxena et al., 2020](https://aclanthology.org/2020.acl-main.412).
 
 ---
 
 ## Knowledge Graphs and Knowledge Graph Embeddings
 
-Here, we detail the structure and types of Knowledge Graphs (KGs) and discuss the importance of KGEs in transforming KG data into a usable format for various machine learning tasks.
+Knowledge Graphs (KGs) play a pivotal role in structuring and harnessing complex data across diverse domains. Defined as a collection of triples, KG = {(h, r, t) ⊆ E × R × E}, where E represents entities and R denotes relations, these graphs store knowledge in a structured, semantically rich format. This structure not only supports advanced data integration and querying but also enhances analysis capabilities crucial for intelligent systems.
+
+### Types of Knowledge Graphs
+Knowledge graphs can be categorized based on the nature of the stored information:
+- **Encyclopedic KGs:** Such as Wikidata, Freebase, and Dbpedia, which provide broad informational coverage by compiling general knowledge from extensive sources.
+- **Commonsense KGs:** Like ConceptNet and ATOMIC, encode everyday knowledge about objects and interactions, aiding machines in understanding human concepts.
+- **Domain-Specific KGs:** Focus on specialized fields like medicine or finance, emphasizing precision and relevance over breadth.
+- **Multimodal KGs:** Such as IMGpedia and MMKG, integrate data across various modalities—text, images, videos—to enhance data richness and support complex applications like visual question answering.
+
+### Importance of Knowledge Graph Embeddings (KGEs)
+While KGs are effective for direct queries, their structural form can limit applications requiring inferential reasoning, such as link prediction or similarity assessment. KGEs transform these entities and relationships into continuous vector spaces, enabling the use of mathematical tools to measure similarities and predict relationships. This transformation is crucial for tasks like recommendation systems or social network analysis and aids in integrating KGs with other machine learning models for enhanced NLP system performance.
+
+### Leveraging Negative Sampling Techniques for KGEs
+Negative sampling is essential in KGE training, helping models learn to distinguish between true and potential but unobserved relationships. This process involves:
+- **Discriminative Learning:** Learning to preferentially score true relationships higher than false ones.
+- **Handling Sparse Data:** Addressing the sparsity of KGs by teaching models about potential non-existing relations.
+- **Improving Generalization:** Encouraging models to generalize well by providing a variety of counterexamples.
+
+**Static Random Negative Sampling**, a prevalent approach, applies the closed-world assumption, considering any triple not present in the KG as negative. However, this method faces challenges due to the inherent incompleteness of KGs and might generate incorrect negative instances, leading to errors in model training.
+
+For a deeper understanding, refer to the works of [Pan et al., 2023](https://example.com/pan2023), [Madushanka and Ichise, 2024](https://example.com/madushanka2024), and other leading researchers in the field.
 
 ![Examples of KG Categories](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*fKqdqCMI9UQz0YX291IVIw.png)
 
@@ -79,7 +121,35 @@ The experiment investigates various negative sampling techniques and their impac
 
 ## Results and Discussion
 
-The results section discusses the performance of different KGE models under various negative sampling methods and provides a comparative analysis of the question answering pipeline's effectiveness against classical methods like cosine similarity.
+### Performance Evaluation of Knowledge Graph Embeddings (KGEs)
+
+The effectiveness of different KGE models under various negative sampling techniques was assessed using three key performance metrics:
+
+- **Mean Rank**: Measures the average position of the correct entity in a list ranked by the model. A lower mean rank indicates better performance, as the correct entities are ranked closer to the top ([Bordes et al., 2013](https://papers.nips.cc/paper/2013/hash/1cecc7a77928ca8133fa24680a88d2f9-Abstract.html)).
+- **Mean Reciprocal Rank (MRR)**: This metric evaluates the average inverse rank of the correct entities, with higher values indicating superior model performance in ranking correct entities near the top of the list ([Yang et al., 2015](https://arxiv.org/abs/1412.6575)).
+- **Hits@k**: Measures the percentage of correct entities that appear within the top k ranks, with higher values suggesting better retrieval performance ([Yang et al., 2015](https://arxiv.org/abs/1412.6575)).
+
+The comparative analysis revealed that ComplEx, particularly with Random Corrupt Negative Sampling, outperformed other configurations, including DistMult. The table below summarizes the key metrics for different sampling and embedding methods:
+
+| KGE Model  | Sampling Method     | Mean Rank | MRR    | Hits@10 |
+|------------|---------------------|-----------|--------|---------|
+| ComplEx    | Uniform             | 397.48    | 0.2742 | 0.3664  |
+| ComplEx    | Random Corrupt      | 357.62    | 0.2849 | 0.3886  |
+| ComplEx    | Batch NS            | 463.07    | 0.2668 | 0.3459  |
+| DistMult   | Uniform             | 528.17    | 0.2386 | 0.3360  |
+| DistMult   | Random Corrupt      | 477.78    | 0.2554 | 0.3400  |
+| DistMult   | Batch NS            | 660.01    | 0.1922 | 0.2756  |
+
+### Insights and Implications
+
+The superior performance of ComplEx can be attributed to its ability to effectively model both symmetric and antisymmetric relations, thanks to its complex-valued embeddings. These embeddings enhance the model’s capability to distinguish between different types of relational structures, a critical factor in accurately processing complex KGQA tasks.
+
+DistMult’s limitations stem from its symmetric scoring function, which cannot differentiate well between relational structures where directionality is crucial, such as antisymmetric relations. This fundamental difference in handling relation types is a key factor in the observed performance disparity between ComplEx and DistMult.
+
+The findings from this study not only highlight the importance of choosing the right negative sampling technique but also underscore the potential of complex embeddings in enhancing the performance of KGQA systems.
+
+For a more detailed exploration of these results and methodologies, refer to the studies by [Trouillon et al., 2016](https://arxiv.org/abs/1606.06357) and [Yang et al., 2015](https://arxiv.org/abs/1412.6575).
+
 
 ---
 
@@ -89,9 +159,9 @@ This study highlights the pivotal role of negative sampling in enhancing the per
 
 ---
 
-**Video Demonstration:** [Click here to watch](link-to-video)
+**Video Demonstration:** [Click here to watch]([link-to-video](https://drive.google.com/file/d/1iGQIY6rx7LpiDxoI0BDY2RzK03k5vArc/view?usp=sharing))
 
-**Dataset:** [Access the dataset here](link-to-dataset)
+**Dataset:** [Access the dataset here](https://drive.google.com/drive/folders/1IVUUoo_cvmLJBWSl4BOln8YL4VoMC9LM?usp=sharing)
 
 **References:**
 1. Pan, S., Luo, L., Wang, Y., Chen, C., Wang, J., & Wu, X. (2023). Unifying Large Language Models and Knowledge Graphs: A Roadmap. *arXiv preprint arXiv:2306.08302*. [Access here](https://api.semanticscholar.org/CorpusID:259165563).
