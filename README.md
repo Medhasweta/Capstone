@@ -4,8 +4,8 @@
 
 **Authors:**
 - Medhasweta Sen 
-- Mary Han
-- Jeni Frankenstein
+- Nina Ebensperger
+- Nayaeun Kwon
 
 **Supervised By:**
 - Amir Jafari
