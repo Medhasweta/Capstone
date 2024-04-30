@@ -26,22 +26,25 @@ for split in ['train', 'valid', 'test']:
         relations = [triple[1] for triple in triples]
 
 
-# 4. Convert triples into sentences
+# 3. Convert triples into sentences
 triple_sentences = [' '.join(triple) for triple in triples]
 
-# 5. Convert triples and relations to embeddings
+# 4. Convert triples and relations to embeddings
 triple_embeddings = model.encode(triple_sentences) # (4053, 384)
 relation_embeddings = model.encode(relations) # (4053, 384)
 
 
 #%%
-# 6. Sample question
+# 5. Convert questions to embeddings
 
 # Path to the text file
 question_path = '/Users/yoninayoni/Documents/GitHub/Capstone/data/MetaQA/qa_dev_1hop.txt'
 
 # Initialize an empty list to store the questions
-questions = []
+questions = [] # 9992
+
+# Initialize an empty dictionary to store the mapping of questions to correct answers
+correct_answers = {}
 
 # Open and read the file
 with open(question_path, 'r') as file:
@@ -49,21 +52,23 @@ with open(question_path, 'r') as file:
         # Split the line at the tab character
         parts = line.strip().split('\t')
         if len(parts) > 1:
-            question = parts[0]
+            question, answers = parts[0], parts[1]
             # Remove the brackets and anything inside them
             cleaned_question = question.replace('[', '').replace(']', '')
+            # Split the answers string into a list of answers
+            answer_list = answers.split('|')
             # Append the cleaned question to the list
             questions.append(cleaned_question)
-
+            # Add to the dictionary
+            correct_answers[cleaned_question] = answer_list
 
 # Print or process the list of questions
 print(questions)
 
-#%%
-unique_relations_set = set(relations)
 
-# # Convert the set back to a list if you need list operations later
-# unique_relations_list = list(unique_relations_set)
+#%% 
+# 6. Clustering relations
+unique_relations_set = set(relations)
 
 # Print the unique relations
 print("Unique relations:", unique_relations_set)
@@ -77,11 +82,12 @@ relation_clusters = relation_kmeans.fit_predict(relation_embeddings)
 relation_to_cluster = {relation: cluster for relation, cluster in zip(relations, relation_clusters)}
 
 #%%
+# 7. Convert cs results to a pandas DataFrame to see at a glance
 results = []
 
 for i, question in enumerate(questions):
-    # Convert question to embeddings
-    question_embedding = model.encode([question])
+    # Convert question to embeddings 
+    question_embedding = model.encode([question]) # (9992, 384)
 
     # Calculate cosine similarities
     similarities = cosine_similarity(question_embedding, triple_embeddings)
@@ -109,7 +115,6 @@ for i, question in enumerate(questions):
         "Topic Cluster": question_topic_cluster
     })
 
-# Convert results to a pandas DataFrame
 df_results = pd.DataFrame(results)
 
 # Set the threshold for high similarity
@@ -119,10 +124,43 @@ threshold = 0.7
 # It will contain 1 if the cosine similarity score is above 0.8, and 0 otherwise
 df_results['High Similarity'] = (df_results['Cosine Similarity Score'] >= threshold).astype(int)
 
-#%% Compare Results
+# Add the correct answers as a new column in df_results DataFrame
+df_results['Correct Answer'] = df_results['Question'].map(correct_answers)
+
+
+#%% 
+# 8. hierarcical clustering
+linkages = {}
+labels_dict = {}
+
+for relation in sorted(unique_relations_set):
+    group_df = df_results[df_results['Most Similar Relation'] == relation]
+    embeddings = np.vstack(group_df['Question Embedding'])
+    labels = group_df['Question'].tolist()  # Get the corresponding questions as labels
+    
+    # Perform hierarchical clustering
+    linkages[relation] = linkage(embeddings, method='ward')
+    labels_dict[relation] = labels  # Store labels in a dictionary
+
+# Example to split visualizations
+num_relations = len(unique_relations_set)
+relations_per_figure = 3  # Number of dendrograms per figure
+
+for i in range(0, num_relations, relations_per_figure):
+    fig, axes = plt.subplots(nrows=relations_per_figure, ncols=1, figsize=(10, 15))
+    for ax, relation in zip(axes, sorted(unique_relations_set)[i:i+relations_per_figure]):
+        dendrogram(linkages[relation], ax=ax, orientation='top', distance_sort='descending', show_leaf_counts=True)
+        ax.set_title(f'Cluster: {relation}')
+        ax.set_xticklabels([])
+    plt.tight_layout()
+    plt.show()
+    
+# ax.set_xticklabels([])
+#%% 
+# 9. Compare Results with cs and kgqa
 
 # Path to the text file
-modeling_question_path = '/Users/yoninayoni/Downloads/ComplEx_RoBERTa_best_score_model (1).txt'
+modeling_question_path = '/Users/yoninayoni/Documents/GitHub/Capstone/data/MetaQA/kgqa_result.txt'
 
 # Read the file into a DataFrame
 df = pd.read_csv(modeling_question_path, sep='\t', header=None, names=['Question', 'ID', 'Flag'])
@@ -146,206 +184,50 @@ else:
     print("Both columns have the same number of '1's.")
 
 
-#=====================================================================
-#%%1 once
-# Find topic of questions
-qe_array = np.vstack(df_results["Question Embedding"])
-from sklearn.cluster import AgglomerativeClustering
-from scipy.cluster.hierarchy import dendrogram, linkage
-import matplotlib.pyplot as plt
+# #%%
 
+# from collections import Counter
+# import re
 
-# Step 2: Perform hierarchical clustering
-model = AgglomerativeClustering(distance_threshold=None, n_clusters=9, linkage='ward')
-clusters = model.fit_predict(qe_array)
+# # Join all questions into a single string
+# all_questions = ' '.join(questions)
 
-# Step 3: Visualize the dendrogram (Optional)
-# This requires a full linkage matrix which can be computed from the embeddings
-linked = linkage(qe_array, method='ward')
+# # Tokenize the string into words using regular expression to handle punctuation
+# words = re.findall(r'\w+', all_questions.lower())  # This converts all text to lowercase and finds words
 
-plt.figure(figsize=(10, 7))
-dendrogram(linked,
-           orientation='top',
-           distance_sort='descending',
-           show_leaf_counts=True)
-plt.title('Hierarchical Clustering Dendrogram')
-plt.show()
+# # Count the occurrences of each word
+# word_count = Counter(words)
 
+# # Display the most common words and their counts
+# print(word_count.most_common())  # This prints all words sorted by frequency
 
+# # Want to see specific words count
+# print("Frequency of 'movies':", word_count['movies'])
+# print("Frequency of 'films':", word_count['films'])
+# print("Frequency of 'act':", word_count['act'])
+# #%%
+# import pandas as pd
+# import re
 
+# # Define the dictionary mapping keywords to relations
+# relation_keywords = {
+#     'directed_by': ['director', 'directed', 'creator', 'direct'],
+#     'has_genre': ['genre', 'type', 'sort', 'kind', 'applicable'],
+#     'has_imdb_rating': ['rate', 'good', 'rating', 'think', 'opinion', 'popular', 'popularity'],
+#     'has_imdb_votes': ['famous'],
+#     'has_tags': ['words', 'describe', 'topics', 'described', 'about'],
+#     'in_language': ['language'],
+#     'release_year': ['released', 'year', 'release', 'when', 'date'],
+#     'starred_actors': ['starred', 'acted', 'actor', 'stars', 'act', 'star', 'actors', 'appear', 'appears'],
+#     'written_by': ['writer', 'wrote', 'write', 'written', 'screenwriter', 'author']
+# }
 
-#%%2 once for 9 
-# Assuming df_results is already loaded and contains the columns needed
-linkages = {}
-labels_dict = {}
+# def identify_relation(question):
+#     words = re.findall(r'\w+', question.lower())  # Tokenize the question into words
+#     for relation, keywords in relation_keywords.items():
+#         if any(word in words for word in keywords):
+#             return relation
+#     return None  # Return None if no keywords match
 
-for relation in sorted(unique_relations_set):
-    group_df = df_results[df_results['Most Similar Relation'] == relation]
-    embeddings = np.vstack(group_df['Question Embedding'])
-    labels = group_df['Question'].tolist()  # Get the corresponding questions as labels
-    
-    # Perform hierarchical clustering
-    linkages[relation] = linkage(embeddings, method='ward')
-    labels_dict[relation] = labels  # Store labels in a dictionary
-
-# Visualize All Clusters in a Unified Dendrogram
-fig, axes = plt.subplots(nrows=len(unique_relations_set), ncols=1, figsize=(10, 20))
-
-for ax, relation in zip(axes, sorted(unique_relations_set)):
-    dendrogram(linkages[relation], ax=ax, orientation='top', labels=labels_dict[relation], distance_sort='descending', show_leaf_counts=True)
-    ax.set_title(f'Cluster: {relation}')
-
-plt.tight_layout()
-plt.show()
-
-
-#%% once for 3 
-
-# Example to split visualizations
-num_relations = len(unique_relations_set)
-relations_per_figure = 3  # Number of dendrograms per figure
-
-for i in range(0, num_relations, relations_per_figure):
-    fig, axes = plt.subplots(nrows=relations_per_figure, ncols=1, figsize=(10, 15))
-    for ax, relation in zip(axes, sorted(unique_relations_set)[i:i+relations_per_figure]):
-        dendrogram(linkages[relation], ax=ax, orientation='top', labels=labels_dict[relation], distance_sort='descending', show_leaf_counts=True)
-        ax.set_title(f'Cluster: {relation}')
-    plt.tight_layout()
-    plt.show()
-    
-    
-#%%
-# Find topic of questions
-qe_array = np.vstack(df_results["Question Embedding"])
-kmeans_ = KMeans(n_clusters=5, random_state=42).fit(qe_array)
-question_topic = kmeans_.labels_
-
-df_results['Question Topic'] = question_topic
-
-
-# Plot questions
-from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
-
-pca = PCA(n_components=2)
-embeddings_2d = pca.fit_transform(qe_array)
-
-# #%% simple plot
-# # Plotting the 2D embeddings
-# plt.figure(figsize=(12, 8))
-
-# plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c='blue')
-# for i, question in enumerate(questions):
-#     plt.annotate(question, (embeddings_2d[i, 0], embeddings_2d[i, 1]))
-# plt.xlabel('Component 1')
-# plt.ylabel('Component 2')
-# plt.title('2D PCA of Question Embeddings')
-# plt.show()
-
-colors = np.array(['red', 'green', 'blue', 'purple', 'orange'])
-
-plt.figure(figsize=(12, 8))
-
-# Here, we use the 'c' argument in scatter to assign colors based on 'question_topic'
-plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c=colors[question_topic])
-
-for i, question in enumerate(questions):
-    plt.annotate(question, (embeddings_2d[i, 0], embeddings_2d[i, 1]), fontsize=9, alpha=0.7)
-
-plt.xlabel('Component 1')
-plt.ylabel('Component 2')
-plt.title('2D PCA of Question Embeddings with Topic Grouping')
-plt.show()
-
-#%% second
-import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-from matplotlib.patches import Patch
-# Assuming df_results already has 'Question Embedding' and 'Question Topic' as columns
-
-# Stack the question embeddings for PCA
-qe_array = np.vstack(df_results["Question Embedding"])
-
-# Apply PCA to reduce dimensionality for visualization
-pca = PCA(n_components=2)
-embeddings_2d = pca.fit_transform(qe_array)
-
-# Colors for the clusters - make sure you have enough colors for all clusters
-colors = np.array(['red', 'green', 'blue', 'purple', 'orange', 'yellow'])
-
-unique_clusters = np.unique(df_results['Topic Cluster'])
-
-if len(unique_clusters) > len(colors):
-    raise ValueError("Not enough colors for the number of clusters.")
-
-# Creating the plot
-plt.figure(figsize=(12, 8))
-
-# Map each unique cluster ID to a color and a label
-cluster_color_map = {cluster: color for cluster, color in zip(unique_clusters, colors)}
-cluster_label_map = {cluster: relation for cluster, relation in zip(unique_clusters, df_results['Most Similar Relation'].unique())}
-
-
-# Scatter plot with color mapping by 'Topic Cluster'
-scatter_colors = [cluster_color_map[cluster] for cluster in df_results['Topic Cluster']]
-plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c=scatter_colors, alpha=0.7)
-
-# Create a custom legend
-legend_handles = [Patch(color=cluster_color_map[cluster], label=cluster_label_map[cluster]) for cluster in unique_clusters]
-plt.legend(handles=legend_handles, title="Relation Topics")
-
-#
-# # Scatter plot with annotations
-# scatter = plt.scatter(embeddings_2d[:, 0], embeddings_2d[:, 1], c=colors[df_results['Topic Cluster']], alpha=0.7)
-# plt.colorbar(scatter, ticks=np.unique(df_results['Topic Cluster']))
-# plt.clim(-0.5, len(np.unique(df_results['Topic Cluster'])) - 0.5)
-
-# Add annotations for each question
-for i, question in enumerate(df_results['Question']):
-    plt.annotate(question, (embeddings_2d[i, 0], embeddings_2d[i, 1]), fontsize=9, alpha=0.7)
-
-# Adding labels and title
-plt.xlabel('PCA Component 1')
-plt.ylabel('PCA Component 2')
-plt.title('2D PCA of Question Embeddings with Topic Grouping')
-
-# Display the plot
-plt.show()
-
-
-#%%
-# Display or save the DataFrame
-df_results = df_results.drop(['Question Embedding'], axis=1)
-# To save the DataFrame as a CSV file
-# df_results.to_csv('qa_results.csv', index=True)
-
-
-# %%
-# # Flatten the array to make it a 1D array
-# flattened_similarities = similarities.flatten()
-
-# # Use argsort() which returns the indices that would sort the array
-# sorted_indices = np.argsort(flattened_similarities)
-
-# # The last element is the index of the highest value, so the second last is what you're looking for
-# second_highest_index = sorted_indices[-2]
-
-# # Get the second highest similarity score
-# second_highest_similarity = flattened_similarities[second_highest_index]
-
-# # Output the result
-# print(f"Second highest cosine similarity score: {second_highest_similarity:.4f}")
-# print(f"Corresponding triple: {triples[second_highest_index]}")
-
-
-#%%
-# Make 20 questions and set the threshord (0.8). Compare the result with Sen&Nina's result
-# To check topic of question using clustering (K means). Combine question embedding/ answering embedding.
-
-
-
-
-# # %%
-# hierarch clustering
-# for example,
-# cluster1 has 100 questions and 100 questions have each relations. Sort 100 questions
+# # Assuming 'df_results' is already DataFrame and it has a column named 'Question'
+# df_results['Real Relation'] = df_results['Question'].apply(identify_relation)
