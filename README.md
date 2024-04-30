@@ -101,6 +101,9 @@ EmbedKGQA methodically answers complex questions using KGs through its three mai
 
 ![Overview of EmbedKGQA](research_paper/Latex/EmbedKGQA.png)
 
+*Figure: Overview of EmbedKGQA - adapted from Saxena, A., Tripathi, A., & Talukdar, P. (2020). "Improving Multi-hop Question Answering over Knowledge Graphs using Knowledge Base Embeddings." Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics.* [Access here](https://aclanthology.org/2020.acl-main.412).
+
+
 ---
 
 ## Experiment
