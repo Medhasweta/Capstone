@@ -3,7 +3,7 @@
 ## Our Wonderful Project
 
 **Authors:**
-- John John
+- Medhasweta Sen 
 - Mary Han
 - Jeni Frankenstein
 
