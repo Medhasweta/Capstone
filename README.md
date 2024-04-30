@@ -1,8 +1,6 @@
 # Data Science Program Capstone Report: Spring 2023
 
-## Our Wonderful Project
-
-Welcome to "Our Wonderful Project"! This project delves into enhancing Question Answering systems using Knowledge Graphs (KGs). By integrating these graphs with advanced machine learning models, we aim to improve the accuracy and efficiency of systems that answer complex questions.
+This project delves into enhancing Question Answering systems using Knowledge Graphs (KGs). By integrating these graphs with advanced machine learning models, we aim to improve the accuracy and efficiency of systems that answer complex questions.
 
 ### Authors
 - Medhasweta Sen
