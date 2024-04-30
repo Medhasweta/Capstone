@@ -99,7 +99,7 @@ For a deeper understanding, refer to the works of [Pan et al., 2023](https://exa
 
 EmbedKGQA methodically answers complex questions using KGs through its three main modules: KG Embedding, Question Embedding, and Answer Selection. This pipeline optimizes the question answering process with advanced embedding techniques.
 
-![Overview of EmbedKGQA](EmbedKGQA.png)
+![Overview of EmbedKGQA](research_paper/Latex/EmbedKGQA.png)
 
 ---
 
